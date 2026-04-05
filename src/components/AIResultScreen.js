@@ -4,7 +4,7 @@ import './AIResultScreen.css';
 import BoundingOverlay from './BoundingOverlay';
 import { storage } from '../utils/aiPipeline';
 import { matchProsToEstimate } from '../utils/aiPipeline';
-import { PROS, AI_ANALYSES } from '../data/mockData';
+import { PROS, AI_ANALYSES, SERVICE_TILES } from '../data/mockData';
 
 export default function AIResultScreen({ analysis, photos, answers, navigate, zip }) {
   const [showSheet, setShowSheet] = useState(false);

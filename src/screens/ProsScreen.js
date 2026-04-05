@@ -131,7 +131,7 @@ export default function ProsScreen({ navigate, analysis }) {
                           <span style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</span>
                           <span className="stars" style={{ fontSize: 12 }}>{'★'.repeat(r.rating)}</span>
                         </div>
-                        <div style={{ fontSize: 13, color: 'var(--gray)', fontStyle: italic }}>"{r.text}"</div>
+                        <div style={{ fontSize: 13, color: 'var(--gray)', fontStyle: 'italic' }}>"{r.text}"</div>
                       </div>
                     ))}
                     <button className="btn btn-orange btn-full" style={{ marginTop: 8, padding: '13px' }} onClick={() => handleBook(p)}>
