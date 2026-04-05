@@ -1,0 +1,43 @@
+# --- SECURITY & SECRETS ---
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+# Backup of env files
+.env.bak
+.env.old
+
+# --- PYTHON (FastAPI) ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# --- JAVASCRIPT (React) ---
+node_modules/
+dist/
+build/
+.pnp/
+.pnp.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- OPERATING SYSTEM ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- MONETIZATION / DATABASE ---
+*.db
+*.sqlite3
+# Stripe/Payment log files
+logs/
