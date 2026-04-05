@@ -1,0 +1,109 @@
+
+.guided-prompts {
+  min-height: 100vh;
+  background: #0f1923;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 16px 32px;
+}
+
+.guided-progress {
+  width: 100%;
+  height: 3px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 100px;
+  margin-top: 52px;
+  overflow: hidden;
+}
+
+.guided-progress-fill {
+  height: 100%;
+  background: var(--teal);
+  border-radius: 100px;
+  transition: width 0.4s ease;
+}
+
+.prompt-card {
+  background: linear-gradient(135deg, #1a2535, #243040);
+  border-radius: 20px;
+  padding: 24px;
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.prompt-q {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  line-height: 1.4;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.prompt-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.prompt-option {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  text-align: left;
+  transition: all 0.2s;
+  animation: slideUp 0.4s ease both;
+}
+
+.prompt-option:hover {
+  border-color: var(--teal);
+  background: rgba(0, 180, 168, 0.12);
+}
+
+.prompt-option:active {
+  transform: scale(0.98);
+}
+
+.prompt-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  transition: all 0.3s;
+}
+
+.prompt-dot.active {
+  background: var(--teal);
+  width: 24px;
+  border-radius: 4px;
+}
+
+.prompt-dot.done {
+  background: rgba(0, 180, 168, 0.5);
+}
+
+.prompt-skip {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.3);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 16px;
+  transition: color 0.2s;
+}
+
+.prompt-skip:hover {
+  color: rgba(255,255,255,0.6);
+}

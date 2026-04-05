@@ -1,0 +1,72 @@
+
+.vitals-screen {
+  min-height: 100vh;
+  background: #0f1923;
+  padding-bottom: 32px;
+}
+
+.vitals-group {
+  background: rgba(255,255,255,0.04);
+  border-radius: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.vitals-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.vitals-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.vitals-chip {
+  padding: 8px 14px;
+  border-radius: 100px;
+  border: 1.5px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.7);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vitals-chip:hover {
+  border-color: rgba(0,180,168,0.4);
+}
+
+.vitals-chip.active {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: white;
+}
+
+.btn-teal-saved {
+  background: #10b981 !important;
+  box-shadow: 0 8px 24px rgba(16,185,129,0.3) !important;
+}
+
+.vitals-skip {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.3);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 16px 16px 0;
+  width: 100%;
+  transition: color 0.2s;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.vitals-skip:hover {
+  color: rgba(255,255,255,0.6);
+}
