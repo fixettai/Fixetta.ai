@@ -1,13 +1,12 @@
 
 import React, { useState } from 'react';
+import { AI_ANALYSES } from '../data/mockData';
 
 export default function HomeScreen({ navigate, setAnalysis, setPhotos }) {
   const [activeChip, setActiveChip] = useState('All');
   const chips = ['All', 'Plumbing', 'Electric', 'Assembly', 'Painting', 'Moving', 'Roofing'];
-  const importPromise = import('../data/mockData.js');
 
-  const handleServiceTap = async (key) => {
-    const { AI_ANALYSES } = await importPromise;
+  const handleServiceTap = (key) => {
     setAnalysis(AI_ANALYSES[key] || AI_ANALYSES.default);
     setPhotos([]);
     navigate('result');

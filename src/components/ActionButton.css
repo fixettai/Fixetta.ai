@@ -1,0 +1,97 @@
+/**
+ * ActionButton Component Styles - Silk Neomorphic Design
+ * Mobile-first approach with 44x44px minimum touch targets
+ */
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 26px;
+  background: var(--surface, #e8eaf0);
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary, #1e293b);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.08), -4px -4px 8px rgba(255, 255, 255, 0.6);
+  min-height: 44px;
+}
+
+.action-btn:active:not(:disabled) {
+  box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.06), inset -3px -3px 6px rgba(255, 255, 255, 0.5);
+  transform: scale(0.98);
+}
+
+.action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Primary Variant */
+.action-btn--primary {
+  background: linear-gradient(135deg, var(--primary, #6366f1), var(--accent, #7c3aed));
+  color: white;
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+}
+
+.action-btn--primary:active:not(:disabled) {
+  box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.2), inset -3px -3px 6px rgba(255, 255, 255, 0.1);
+}
+
+/* Loading State */
+.action-btn--loading {
+  cursor: wait;
+}
+
+.action-btn__spinner {
+  display: inline-flex;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Icon */
+.action-btn__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* Responsive breakpoints */
+@media (min-width: 768px) {
+  .action-btn {
+    width: auto;
+    padding: 14px 32px;
+  }
+}
+
+/* Focus states for accessibility */
+.action-btn:focus-visible {
+  outline: 2px solid var(--primary, #6366f1);
+  outline-offset: 2px;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .action-btn {
+    transition: none;
+  }
+  
+  .action-btn__spinner {
+    animation-duration: 2s;
+  }
+}

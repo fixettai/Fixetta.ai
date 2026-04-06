@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 
 // Screens
@@ -14,6 +13,16 @@ import GuidedPrompts from './components/GuidedPrompts';
 import AIResultScreen from './components/AIResultScreen';
 import VitalsVault from './components/VitalsVault';
 
+// New Silk Design Components
+import Header from './components/Header';
+import AIHero from './components/AIHero';
+import ScopeInputs from './components/ScopeInputs';
+import ActionButton from './components/ActionButton';
+
+// Utilities
+import { packageSubmissionRequest, validateSubmission } from './utils/validator';
+import { ENDPOINTS, APP_CONFIG } from './config';
+
 export default function App() {
   const [flow, setFlow] = useState('home'); // current screen
   const [photos, setPhotos] = useState([]); // captured photos
@@ -21,6 +30,11 @@ export default function App() {
   const [answers, setAnswers] = useState([]); // guided prompt answers
   const [toast, setToast] = useState(null);
   const [zip, setZip] = useState('23219'); // Default zip for rates
+  
+  // New Silk submission flow state
+  const [formData, setFormData] = useState(null); // Form data from ScopeInputs
+  const [isSubmitting, setIsSubmitting] = useState(false); // Submission loading state
+  const [submissionError, setSubmissionError] = useState(null); // Submission error
 
   // Navigate to a main screen
   const navigate = (screen) => {
@@ -60,6 +74,68 @@ export default function App() {
   // Home vitals vault navigation
   const handleVitalsNext = () => {
     setFlow('home');
+  };
+
+  // ===== SILK SUBMISSION FLOW HANDLERS =====
+  
+  // Handle form data submission from ScopeInputs
+  const handleFormSubmit = (data) => {
+    setFormData(data);
+    setToast('Information saved. Ready to submit!');
+  };
+
+  // Handle form validation errors
+  const handleFormError = (errors) => {
+    setSubmissionError(errors);
+    setToast('Please fix the errors above');
+  };
+
+  // Handle ActionButton click - submit to AI backend
+  const handleSubmission = async (requestPayload) => {
+    setIsSubmitting(true);
+    setSubmissionError(null);
+    
+    try {
+      // Package the request with photos
+      const packagedRequest = packageSubmissionRequest(
+        { ...formData, ...requestPayload.scope, ...requestPayload.contact },
+        photos
+      );
+
+      // Log the packaged request for debugging (remove in production)
+      console.log('Packaged submission request:', JSON.stringify(packagedRequest, null, 2));
+
+      // Simulate API call to OpenRouter backend
+      // In production, this would be:
+      // const response = await fetch(ENDPOINTS.ANALYZE, {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(packagedRequest),
+      // });
+      // const data = await response.json();
+      
+      // For now, simulate the flow with mock data
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Get analysis from mock data based on category
+      import('./data/mockData.js').then(mod => {
+        const AI_ANALYSES = mod.AI_ANALYSES;
+        const category = formData?.category || 'default';
+        const analysisData = AI_ANALYSES[category] || AI_ANALYSES.default;
+        setAnalysis(analysisData);
+        setFlow('loading');
+      }).catch(err => {
+        console.error('Failed to load mock data:', err);
+        setToast('Analysis failed. Please try again.');
+        setIsSubmitting(false);
+      });
+      
+    } catch (error) {
+      console.error('Submission error:', error);
+      setSubmissionError(error.message);
+      setToast('Submission failed. Please try again.');
+      setIsSubmitting(false);
+    }
   };
 
   // Nav items

@@ -338,3 +338,82 @@ input, select { font-family: 'DM Sans', sans-serif; }
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .bottom-nav { padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
 }
+
+/* --- SILK NEOMORPHIC UTILITIES --- */
+/* Silk Design System: Neomorphic/Soft UI Design Tokens */
+:root {
+  --primary: #6366f1;      /* Indigo - interactive elements */
+  --accent: #7c3aed;       /* Violet - secondary accents */
+  --surface: #e8eaf0;      /* Cool gray - surface color */
+  --text-primary: #1e293b; /* Primary text */
+  --text-secondary: #64748b; /* Secondary text */
+  --text-muted: #94a3b8;   /* Muted text */
+  --error: #ef4444;        /* Error color */
+  --success: #10b981;      /* Success color */
+}
+
+/* Raised Neomorphic Element */
+.neo-raised {
+  box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.08), -6px -6px 12px rgba(255, 255, 255, 0.6);
+}
+
+/* Inset/Pressed Neomorphic Element */
+.neo-inset {
+  box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.06), inset -4px -4px 8px rgba(255, 255, 255, 0.5);
+}
+
+/* Small Raised Element */
+.neo-raised-sm {
+  box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.08), -3px -3px 6px rgba(255, 255, 255, 0.6);
+}
+
+/* Small Inset Element */
+.neo-inset-sm {
+  box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.06), inset -2px -2px 4px rgba(255, 255, 255, 0.5);
+}
+
+/* Neomorphic Button Base */
+.neo-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface, #e8eaf0);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.08), -3px -3px 6px rgba(255, 255, 255, 0.6);
+}
+
+.neo-btn:active {
+  box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.06), inset -2px -2px 4px rgba(255, 255, 255, 0.5);
+  transform: scale(0.98);
+}
+
+/* Primary Neomorphic Button */
+.neo-btn-primary {
+  background: linear-gradient(135deg, var(--primary, #6366f1), var(--accent, #7c3aed));
+  color: white;
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+}
+
+/* Utility Classes */
+.section-title {
+  font-family: 'Syne', var(--font-family, sans-serif);
+  font-weight: 700;
+}
+
+.notif-dot {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  border: 2px solid var(--gray-l);
+}
+
+.avail-dot {
+  animation: pulse 2s infinite;
+}

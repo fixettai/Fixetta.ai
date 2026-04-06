@@ -1,0 +1,175 @@
+/**
+ * ScopeInputs Component Styles - Silk Neomorphic Design
+ * Mobile-first approach with 44x44px minimum touch targets
+ */
+
+.scope-inputs-form {
+  padding: 0 16px;
+}
+
+/* Form Sections */
+.form-section {
+  background: var(--surface, #e8eaf0);
+  border-radius: 16px;
+  padding: 24px 20px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.form-section-title {
+  font-family: 'Syne', var(--font-family, sans-serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary, #1e293b);
+  margin: 0 0 20px;
+}
+
+/* Form Groups */
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
+  margin-bottom: 8px;
+}
+
+/* Neomorphic Input Base */
+.neo-input {
+  width: 100%;
+  background: var(--surface, #e8eaf0);
+  border: none;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 15px;
+  color: var(--text-primary, #1e293b);
+  font-family: var(--font-family, sans-serif);
+  box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.06), inset -2px -2px 4px rgba(255, 255, 255, 0.5);
+  transition: box-shadow 0.2s ease;
+  -webkit-appearance: none;
+}
+
+.neo-input::placeholder {
+  color: var(--text-muted, #94a3b8);
+}
+
+.neo-input:focus {
+  outline: none;
+  box-shadow: inset 3px 3px 6px rgba(99, 102, 241, 0.15), inset -3px -3px 6px rgba(255, 255, 255, 0.6), 0 0 0 2px var(--primary, #6366f1);
+}
+
+.neo-input.has-error {
+  box-shadow: inset 2px 2px 4px rgba(239, 68, 68, 0.1), inset -2px -2px 4px rgba(255, 255, 255, 0.5), 0 0 0 2px var(--error, #ef4444);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* Character Counter */
+.char-counter {
+  text-align: right;
+  font-size: 11px;
+  color: var(--text-muted, #94a3b8);
+  margin-top: 6px;
+}
+
+/* Category Grid */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (min-width: 480px) {
+  .category-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Category Chip */
+.category-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 8px;
+  background: var(--surface, #e8eaf0);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.08), -3px -3px 6px rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary, #64748b);
+  min-height: 44px;
+}
+
+.category-chip:active {
+  box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.06), inset -2px -2px 4px rgba(255, 255, 255, 0.5);
+}
+
+.category-chip.selected {
+  box-shadow: inset 3px 3px 6px rgba(99, 102, 241, 0.2), inset -3px -3px 6px rgba(255, 255, 255, 0.4);
+  color: var(--primary, #6366f1);
+}
+
+.category-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.category-label {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Error Messages */
+.form-error {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--error, #ef4444);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+/* Responsive breakpoints */
+@media (min-width: 768px) {
+  .scope-inputs-form {
+    padding: 0 24px;
+  }
+  
+  .form-section {
+    padding: 28px 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .category-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Focus states for accessibility */
+.category-chip:focus-visible {
+  outline: 2px solid var(--primary, #6366f1);
+  outline-offset: 2px;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .neo-input,
+  .category-chip {
+    transition: none;
+  }
+}
