@@ -1,5 +1,5 @@
 /**
- * AIEstimator Component - Photo upload and AI-powered estimation
+ * AIEstimator Component - Photo upload and AI-powered visual pricing breakdown
  * Integrates with EstimatorService for multi-model pipeline
  * Mobile-first, responsive design with loading states
  */
@@ -13,6 +13,7 @@ export default function AIEstimator({ onBack }) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [activeZone, setActiveZone] = useState(null);
   const fileRef = useRef(null);
 
   const MAX_PHOTOS = 4;
@@ -58,16 +59,15 @@ export default function AIEstimator({ onBack }) {
     setIsAnalyzing(true);
     setError(null);
     setResult(null);
+    setActiveZone(null);
 
     try {
       let estimatorResult;
 
       if (photos.length > 0) {
-        // Full pipeline with images
         const files = photos.map((p) => p.file);
         estimatorResult = await runEstimatorPipeline(files, userNote.trim());
       } else {
-        // Text-only estimation using AI
         estimatorResult = await generateTextEstimate(userNote.trim());
       }
 
@@ -75,8 +75,6 @@ export default function AIEstimator({ onBack }) {
     } catch (err) {
       console.error('[AIEstimator] Analysis failed:', err);
       setError(err.message || 'Analysis failed. Please try again.');
-
-      // Fallback on error
       setResult(getFallbackEstimate());
     } finally {
       setIsAnalyzing(false);
@@ -90,6 +88,7 @@ export default function AIEstimator({ onBack }) {
     setUserNote('');
     setResult(null);
     setError(null);
+    setActiveZone(null);
   }, [photos]);
 
   // ── Loading State ─────────────────────────────────────────────────────
@@ -108,8 +107,8 @@ export default function AIEstimator({ onBack }) {
           <h3 className="analyzing-title">{hasPhotos ? 'Analyzing Your Space' : 'Analyzing Your Description'}</h3>
           <p className="analyzing-subtitle">
             {hasPhotos
-              ? 'AI is identifying damage, measuring dimensions, and generating estimates...'
-              : 'AI is generating a professional scope of work and cost estimate...'}
+              ? 'AI is identifying damage zones and generating visual pricing...'
+              : 'AI is generating a visual pricing breakdown...'}
           </p>
           <div className="analyzing-steps">
             {hasPhotos ? (
@@ -120,22 +119,22 @@ export default function AIEstimator({ onBack }) {
                 </div>
                 <div className="step-item pending">
                   <span className="step-dot" />
-                  <span>Scope Generation (Claude)</span>
+                  <span>Pricing Breakdown (Claude)</span>
                 </div>
                 <div className="step-item pending">
                   <span className="step-dot" />
-                  <span>Cost Estimation</span>
+                  <span>Zone Mapping</span>
                 </div>
               </>
             ) : (
               <>
                 <div className="step-item active">
                   <span className="step-dot" />
-                  <span>Generating Scope (Claude)</span>
+                  <span>Generating Pricing (Claude)</span>
                 </div>
                 <div className="step-item pending">
                   <span className="step-dot" />
-                  <span>Cost Estimation</span>
+                  <span>Zone Mapping</span>
                 </div>
               </>
             )}
@@ -147,6 +146,10 @@ export default function AIEstimator({ onBack }) {
 
   // ── Result State ──────────────────────────────────────────────────────
   if (result) {
+    const primaryPhoto = photos.length > 0 ? photos[0].url : null;
+    const summary = result.estimate_summary;
+    const zones = result.repair_zones || [];
+
     return (
       <div className="ai-estimator-container">
         <div className="result-state">
@@ -155,99 +158,102 @@ export default function AIEstimator({ onBack }) {
             <button className="back-btn" onClick={handleNewEstimate}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
             </button>
-            <h2 className="result-title">AI Estimate</h2>
+            <h2 className="result-title">{summary?.project_name || 'AI Estimate'}</h2>
             <div className="result-spacer" />
           </div>
 
-          {/* Detected Items */}
-          <div className="result-section">
-            <h3 className="section-title">Detected Issues</h3>
-            <div className="detected-items-grid">
-              {result.detected_items.map((item, i) => (
-                <div key={i} className="detected-item-chip">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
-            {result.estimated_sqft > 0 && (
-              <div className="sqft-badge">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /><path d="M9 21V9" /></svg>
-                Estimated Area: {result.estimated_sqft} sq ft
+          {/* Hero Image with Hotspots */}
+          {primaryPhoto && (
+            <div className="hero-image-container">
+              <div className="hero-image-wrapper">
+                <img src={primaryPhoto} alt="Analyzed area" className="hero-image" />
+                {/* Hotspot markers */}
+                {zones.map((zone) => (
+                  <button
+                    key={zone.zone_id}
+                    className={`hotspot-marker ${activeZone === zone.zone_id ? 'active' : ''}`}
+                    style={{
+                      left: `${zone.coordinates.x}%`,
+                      top: `${zone.coordinates.y}%`,
+                    }}
+                    onClick={() => setActiveZone(activeZone === zone.zone_id ? null : zone.zone_id)}
+                  >
+                    <span className="hotspot-number">{zone.indicator_number}</span>
+                  </button>
+                ))}
               </div>
-            )}
+            </div>
+          )}
+
+          {/* Total Estimate Summary */}
+          <div className="total-summary-card">
+            <div className="total-summary-header">
+              <h3 className="total-summary-label">{summary?.summary_label || 'Estimate Summary'}</h3>
+              {summary?.confidence && (
+                <span className={`confidence-badge ${summary.confidence}`}>
+                  {summary.confidence.charAt(0).toUpperCase() + summary.confidence.slice(1)} Confidence
+                </span>
+              )}
+            </div>
+            <div className="total-price-display">
+              <span className="total-price-label">Total Estimate</span>
+              <span className="total-price-value">${summary?.total_price?.toLocaleString() || '0'}</span>
+            </div>
+            <div className="price-range-display">
+              <span>Range: ${summary?.price_range_low?.toLocaleString() || '0'} - ${summary?.price_range_high?.toLocaleString() || '0'}</span>
+            </div>
           </div>
 
-          {/* Line Items */}
-          <div className="result-section">
-            <h3 className="section-title">Scope of Work</h3>
-            {/* Project Overview */}
-            {result.project_overview && (
-              <p className="project-overview">{result.project_overview}</p>
-            )}
-            <div className="task-list">
-              {result.line_items.map((item, i) => (
-                <div key={i} className="task-card">
-                  <div className="task-header">
-                    <span className="task-number">{i + 1}</span>
-                    <div className="task-meta">
-                      <span className="task-name">{item.description}</span>
-                      <span className="trade-code-badge">{item.trade_code}</span>
+          {/* Repair Zone Cards */}
+          {zones.length > 0 && (
+            <div className="repair-zones-section">
+              <h3 className="section-title">Repair Zones</h3>
+              <div className="zone-cards-container">
+                {zones.map((zone) => (
+                  <div
+                    key={zone.zone_id}
+                    className={`zone-card ${activeZone === zone.zone_id ? 'active' : ''}`}
+                    onClick={() => setActiveZone(activeZone === zone.zone_id ? null : zone.zone_id)}
+                  >
+                    <div className="zone-card-header">
+                      <div className="zone-indicator">
+                        <span className="zone-number">{zone.indicator_number}</span>
+                      </div>
+                      <div className="zone-title-area">
+                        <h4 className="zone-title">{zone.title}</h4>
+                        <span className={`severity-badge ${zone.severity}`}>{zone.severity}</span>
+                      </div>
+                      <div className="zone-price">${zone.zone_price?.toLocaleString()}</div>
                     </div>
+                    {activeZone === zone.zone_id && (
+                      <div className="zone-card-details">
+                        <p className="zone-description">{zone.description}</p>
+                        <div className="zone-repair-steps">
+                          <h5>Repair Steps:</h5>
+                          <ol>
+                            {zone.repair_steps?.map((step, i) => (
+                              <li key={i}>{step}</li>
+                            ))}
+                          </ol>
+                        </div>
+                        <div className="zone-price-range">
+                          <span>Price Range: ${zone.price_range_low?.toLocaleString()} - ${zone.price_range_high?.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="task-details-row">
-                    <span className="task-qty">{item.quantity} {item.unit}</span>
-                    <span className="task-unit-price">@ ${item.unit_price.toLocaleString()}/{item.unit}</span>
-                  </div>
-                  <div className="task-cost">
-                    ${item.line_total.toLocaleString()}
-                  </div>
-                </div>
-              ))}
-            </div>
-            {/* Cost Breakdown */}
-            <div className="cost-breakdown">
-              <div className="cost-row">
-                <span>Subtotal</span>
-                <span>${result.subtotal.toLocaleString()}</span>
-              </div>
-              <div className="cost-row overhead-row">
-                <span>Overhead & Profit (10%)</span>
-                <span>${result.overhead_profit.toLocaleString()}</span>
+                ))}
               </div>
             </div>
-            {/* Exclusions */}
-            {result.exclusions && result.exclusions.length > 0 && (
-              <div className="exclusions-section">
-                <h4 className="exclusions-title">Exclusions</h4>
-                <div className="exclusions-list">
-                  {result.exclusions.map((exc, i) => (
-                    <span key={i} className="exclusion-chip">{exc}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          )}
 
-          {/* Total Cost */}
-          <div className="result-section total-section">
-            <div className="total-row">
-              <span className="total-label">Grand Total</span>
-              <span className="total-value">${result.total_estimate.toLocaleString()}</span>
-            </div>
-            <p className="disclaimer">
-              * This is an AI-generated estimate. Actual costs may vary based on location, materials, and contractor rates. We recommend getting multiple quotes.
-            </p>
-          </div>
-
-          {/* Action Buttons */}
+          {/* CTA Button */}
           <div className="result-actions">
             <button className="btn-primary" onClick={() => {
-              // Placeholder: Navigate to booking or pros
               alert('Booking feature coming soon!');
             }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" /><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" /></svg>
-              Find Local Pros
+              {result.ui_guidance?.cta_label || 'Book This Repair'}
             </button>
             <button className="btn-secondary" onClick={handleNewEstimate}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>
@@ -281,13 +287,12 @@ export default function AIEstimator({ onBack }) {
 
       {/* Instructions */}
       <div className="estimator-instructions">
-        <p>Upload photos of the area that needs repair. Our AI will analyze the damage and generate an itemized cost estimate.</p>
+        <p>Upload photos of the area that needs repair. Our AI will analyze the damage and generate a visual pricing breakdown with interactive hotspots.</p>
       </div>
 
       {/* Photo Upload Area */}
       <div className="photo-upload-section">
         <div className="photo-grid">
-          {/* Display existing photos */}
           {photos.map((photo, index) => (
             <div key={index} className="photo-thumbnail">
               <img src={photo.url} alt={`Upload ${index + 1}`} />
@@ -302,7 +307,6 @@ export default function AIEstimator({ onBack }) {
             </div>
           ))}
 
-          {/* Add more slots */}
           {photos.length < MAX_PHOTOS && (
             <button
               className="photo-add-slot"
