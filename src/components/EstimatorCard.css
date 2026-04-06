@@ -1,0 +1,211 @@
+**
+ * EstimatorCard Component Styles
+ * Premium, modern card with scenic background
+ */
+
+/* ── Page Container ────────────────────────────────────────────────── */
+.estimator-page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Scenic Background ─────────────────────────────────────────────── */
+.estimator-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(135deg, #1e3a5f 0%, #2d5a87 25%, #4a7fb5 50%, #6b9fd4 75%, #8bb8e0 100%);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+  z-index: 0;
+}
+
+.estimator-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(ellipse at 20% 80%, rgba(255, 183, 77, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(129, 199, 132, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+}
+
+.estimator-bg-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.2) 100%);
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── Shell Container ───────────────────────────────────────────────── */
+.estimator-shell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 16px;
+  max-width: 680px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ── Top Bar ───────────────────────────────────────────────────────── */
+.estimator-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.estimator-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 12px;
+  background: #f1f5f9;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.estimator-back-btn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.estimator-back-btn:active {
+  transform: scale(0.95);
+}
+
+.estimator-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.estimator-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  font-weight: 800;
+  font-size: 16px;
+  border-radius: 10px;
+}
+
+.estimator-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.estimator-topbar-spacer {
+  flex: 1;
+}
+
+.estimator-badge {
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+/* ── Main Card ─────────────────────────────────────────────────────── */
+.estimator-card {
+  flex: 1;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+/* ── Footer ────────────────────────────────────────────────────────── */
+.estimator-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.estimator-footer-dot {
+  opacity: 0.5;
+}
+
+/* ── Responsive Breakpoints ────────────────────────────────────────── */
+@media (min-width: 768px) {
+  .estimator-shell {
+    padding: 24px;
+  }
+
+  .estimator-topbar {
+    padding: 14px 20px;
+    margin-bottom: 20px;
+  }
+
+  .estimator-card {
+    border-radius: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .estimator-shell {
+    padding: 32px;
+  }
+
+  .estimator-topbar {
+    padding: 16px 24px;
+    margin-bottom: 24px;
+  }
+}
+
+/* ── Accessibility ─────────────────────────────────────────────────── */
+.estimator-back-btn:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .estimator-bg {
+    animation: none;
+  }
+}

@@ -4,7 +4,6 @@ import AIHero from '../components/AIHero';
 import ScopeInputs from '../components/ScopeInputs';
 import ActionButton from '../components/ActionButton';
 import LandingContent from '../components/LandingContent';
-import AIEstimator from '../components/AIEstimator';
 import HowToUse from '../components/HowToUse';
 import AboutUs from '../components/AboutUs';
 import ContactUs from '../components/ContactUs';
@@ -14,9 +13,13 @@ import './ServiceHub.css';
  * ServiceHub - Main screen integrating all components
  * Manages navigation between sections: hero, form, how-to-use, about, contact
  * Clean, minimal design with mobile-first responsive layout
+ * 
+ * Note: The AI Estimator is now integrated directly into the AIHero component.
+ * Clicking "Try Snap AI" in the hero will expand the estimator inline instead
+ * of navigating to a separate screen.
  */
 export default function ServiceHub() {
-  const [activeSection, setActiveSection] = useState('home'); // 'home' | 'form' | 'estimator' | 'how-to-use' | 'about' | 'contact'
+  const [activeSection, setActiveSection] = useState('home'); // 'home' | 'form' | 'how-to-use' | 'about' | 'contact'
   const [formData, setFormData] = useState({
     description: '',
     category: '',
@@ -34,14 +37,10 @@ export default function ServiceHub() {
     setActiveSection('form');
   }, []);
 
-  // Handle starting an AI photo-based estimate
-  const handleStartAIEstimate = useCallback(() => {
-    setActiveSection('estimator');
-  }, []);
-
-  // Handle hero CTA click - transition to form
+  // Handle hero CTA click - the estimator is now handled internally by AIHero
   const handleHeroCta = useCallback(() => {
-    setActiveSection('form');
+    // AIHero handles its own estimator state now
+    // This callback is kept for compatibility but no longer navigates to form
   }, []);
 
   // Handle form data changes
@@ -110,14 +109,18 @@ export default function ServiceHub() {
     }
   }, []);
 
+  // Handle estimate complete callback from AIHero
+  const handleEstimateComplete = useCallback((result) => {
+    console.log('Estimate complete:', result);
+    // You can handle the result here, e.g., save to history, show notification, etc.
+  }, []);
+
   // Check if form has valid data to enable submit
   const canSubmit = formData.description.length >= 10 && formData.category.length > 0;
 
   // Render the appropriate section based on activeSection state
   const renderSection = () => {
     switch (activeSection) {
-      case 'estimator':
-        return <AIEstimator onBack={() => setActiveSection('home')} />;
       case 'how-to-use':
         return <HowToUse />;
       case 'about':
@@ -155,8 +158,8 @@ export default function ServiceHub() {
       default:
         return (
           <>
-            <AIHero onCtaClick={handleHeroCta} />
-            <LandingContent onStartEstimate={handleStartEstimate} onStartAIEstimate={handleStartAIEstimate} />
+            <AIHero onEstimateComplete={handleEstimateComplete} />
+            <LandingContent onStartEstimate={handleStartEstimate} />
           </>
         );
     }
