@@ -178,39 +178,62 @@ export default function AIEstimator({ onBack }) {
             )}
           </div>
 
-          {/* Itemized Tasks */}
+          {/* Line Items */}
           <div className="result-section">
             <h3 className="section-title">Scope of Work</h3>
+            {/* Project Overview */}
+            {result.project_overview && (
+              <p className="project-overview">{result.project_overview}</p>
+            )}
             <div className="task-list">
-              {result.itemized_tasks.map((task, i) => (
+              {result.line_items.map((item, i) => (
                 <div key={i} className="task-card">
                   <div className="task-header">
                     <span className="task-number">{i + 1}</span>
-                    <span className="task-name">{task.task}</span>
-                  </div>
-                  {task.materials.length > 0 && (
-                    <div className="task-materials">
-                      <span className="materials-label">Materials:</span>
-                      <div className="materials-list">
-                        {task.materials.map((mat, j) => (
-                          <span key={j} className="material-chip">{mat}</span>
-                        ))}
-                      </div>
+                    <div className="task-meta">
+                      <span className="task-name">{item.description}</span>
+                      <span className="trade-code-badge">{item.trade_code}</span>
                     </div>
-                  )}
+                  </div>
+                  <div className="task-details-row">
+                    <span className="task-qty">{item.quantity} {item.unit}</span>
+                    <span className="task-unit-price">@ ${item.unit_price.toLocaleString()}/{item.unit}</span>
+                  </div>
                   <div className="task-cost">
-                    ${task.estimated_cost.toLocaleString()}
+                    ${item.line_total.toLocaleString()}
                   </div>
                 </div>
               ))}
             </div>
+            {/* Cost Breakdown */}
+            <div className="cost-breakdown">
+              <div className="cost-row">
+                <span>Subtotal</span>
+                <span>${result.subtotal.toLocaleString()}</span>
+              </div>
+              <div className="cost-row overhead-row">
+                <span>Overhead & Profit (10%)</span>
+                <span>${result.overhead_profit.toLocaleString()}</span>
+              </div>
+            </div>
+            {/* Exclusions */}
+            {result.exclusions && result.exclusions.length > 0 && (
+              <div className="exclusions-section">
+                <h4 className="exclusions-title">Exclusions</h4>
+                <div className="exclusions-list">
+                  {result.exclusions.map((exc, i) => (
+                    <span key={i} className="exclusion-chip">{exc}</span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Total Cost */}
           <div className="result-section total-section">
             <div className="total-row">
-              <span className="total-label">Estimated Total</span>
-              <span className="total-value">${result.estimated_cost.toLocaleString()}</span>
+              <span className="total-label">Grand Total</span>
+              <span className="total-value">${result.total_estimate.toLocaleString()}</span>
             </div>
             <p className="disclaimer">
               * This is an AI-generated estimate. Actual costs may vary based on location, materials, and contractor rates. We recommend getting multiple quotes.

@@ -1,2 +1,2 @@
-export { runEstimatorPipeline, getFallbackEstimate } from './EstimatorService';
-export type { EstimatorResult } from './EstimatorService';
+export { runEstimatorPipeline, getFallbackEstimate, generateTextEstimate } from './EstimatorService';
+export type { EstimatorResult, EstimatorLineItem } from './EstimatorService';

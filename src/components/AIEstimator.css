@@ -525,6 +525,56 @@
   margin-bottom: 8px;
 }
 
+.project-overview {
+  font-size: 13px;
+  color: var(--text-secondary, #64748b);
+  line-height: 1.5;
+  margin-bottom: 12px;
+  background: rgba(99,102,241,0.05);
+  padding: 10px 12px;
+  border-radius: 10px;
+  border-left: 3px solid #6366f1;
+}
+
+.task-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.trade-code-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba(99,102,241,0.12);
+  color: #6366f1;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: fit-content;
+}
+
+.task-details-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.task-qty {
+  font-size: 12px;
+  color: var(--text-secondary, #64748b);
+  font-weight: 500;
+}
+
+.task-unit-price {
+  font-size: 11px;
+  color: var(--text-secondary, #64748b);
+  opacity: 0.8;
+}
+
 .task-number {
   width: 24px;
   height: 24px;
@@ -546,34 +596,6 @@
   line-height: 1.4;
 }
 
-.task-materials {
-  margin-bottom: 8px;
-}
-
-.materials-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-secondary, #64748b);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  display: block;
-  margin-bottom: 6px;
-}
-
-.materials-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.material-chip {
-  padding: 4px 8px;
-  background: rgba(99,102,241,0.1);
-  border-radius: 12px;
-  font-size: 11px;
-  color: #6366f1;
-  font-weight: 500;
-}
 
 .task-cost {
   font-size: 16px;
@@ -614,6 +636,57 @@
   color: rgba(255,255,255,0.5);
   line-height: 1.5;
   margin: 0;
+}
+
+/* Cost Breakdown */
+.cost-breakdown {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 10px;
+}
+
+.cost-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text, #1e293b);
+  font-weight: 500;
+  padding: 4px 0;
+}
+
+.overhead-row {
+  color: #6366f1;
+  font-weight: 600;
+}
+
+/* Exclusions */
+.exclusions-section {
+  margin-top: 14px;
+}
+
+.exclusions-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #991b1b;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.exclusions-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.exclusion-chip {
+  padding: 4px 10px;
+  background: #fef2f2;
+  border-radius: 12px;
+  font-size: 11px;
+  color: #991b1b;
+  font-weight: 500;
 }
 
 /* Result Actions */

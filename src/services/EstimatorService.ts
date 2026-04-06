@@ -10,18 +10,35 @@
  *  - All inputs are trimmed and sanitized before prompt construction
  *
  * Token Budget Control:
- *  - max_tokens capped at 600 for Claude scoping (protects $10 credit cap)
+ *  - max_tokens capped at 2000 for Claude scoping (prevents truncation)
  *  - Input compression: detected_items passed as comma-separated string
  *  - Zero-history mode: each request is stateless - NO conversation history sent
+ *
+ * Structured Outputs:
+ *  - Uses response_format json_schema for strict JSON validation
+ *  - Schema enforces ConstructionEstimate format with line items, O&P, totals
  */
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
+export interface EstimatorLineItem {
+  trade_code: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+  line_total: number;
+}
+
 export interface EstimatorResult {
+  project_overview: string;
   detected_items: string[];
   estimated_sqft: number;
-  itemized_tasks: { task: string; materials: string[]; estimated_cost: number }[];
-  estimated_cost: number;
+  line_items: EstimatorLineItem[];
+  subtotal: number;
+  overhead_profit: number;
+  total_estimate: number;
+  exclusions: string[];
 }
 
 interface GeminiVisionResponse {
@@ -34,9 +51,12 @@ interface GeminiVisionResponse {
 }
 
 interface ClaudeScopingResponse {
-  itemized_tasks: { task: string; materials: string[]; estimated_cost: number }[];
-  estimated_cost: number;
-  assumptions: string[];
+  project_overview: string;
+  line_items: EstimatorLineItem[];
+  subtotal: number;
+  overhead_profit: number;
+  total_estimate: number;
+  exclusions: string[];
 }
 
 // ── Config ──────────────────────────────────────────────────────────────────
@@ -79,6 +99,38 @@ const checkRateLimit = (): boolean => {
   } catch {
     return true; // fail open on localStorage error
   }
+};
+
+// ── JSON Schema for ConstructionEstimate ─────────────────────────────────────
+
+const CONSTRUCTION_ESTIMATE_SCHEMA = {
+  type: "object" as const,
+  properties: {
+    project_overview: { type: "string" },
+    zip_code: { type: "string" },
+    line_items: {
+      type: "array" as const,
+      items: {
+        type: "object" as const,
+        properties: {
+          trade_code: { type: "string", description: "Xactimate-style code (e.g., DRY, PLM, PNT, DEM, INS, ELE)" },
+          description: { type: "string" },
+          quantity: { type: "number" },
+          unit: { type: "string", enum: ["SF", "LF", "EA", "LS", "HR", "SH"] },
+          unit_price: { type: "number" },
+          line_total: { type: "number" }
+        },
+        required: ["trade_code", "description", "quantity", "unit", "unit_price", "line_total"],
+        additionalProperties: false
+      }
+    },
+    subtotal: { type: "number" },
+    overhead_profit: { type: "number", description: "Combined 20% of subtotal (10/10 split)" },
+    total_estimate: { type: "number" },
+    exclusions: { type: "array", items: { type: "string" } }
+  },
+  required: ["project_overview", "line_items", "subtotal", "total_estimate", "exclusions"],
+  additionalProperties: false
 };
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -148,16 +200,37 @@ const fileToBase64 = (file: File): Promise<string> =>
  */
 const parseJsonResponse = <T>(text: string): T | null => {
   try {
-    // Regex Strip: Remove any Markdown code blocks (```json ... ``` or ``` ... ```)
-    // This handles cases where the model ignores the json_object flag
-    let cleaned = text.replace(/```(?:json)?\s*([\s\S]*?)```/g, '$1').trim();
+    let cleaned = text.trim();
     
-    // Fallback: Also remove any stray backticks that might remain
-    cleaned = cleaned.replace(/^```|```$/g, '').trim();
+    // Strategy 1: Remove markdown code blocks (```json ... ``` or ``` ... ```)
+    const codeBlockRegex = /```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/g;
+    const codeBlockMatch = codeBlockRegex.exec(cleaned);
+    if (codeBlockMatch && codeBlockMatch[1]) {
+      cleaned = codeBlockMatch[1].trim();
+    } else {
+      // Strategy 2: Strip any stray backticks from start/end
+      cleaned = cleaned.replace(/^```[\s\S]*?\n?|```$/g, '').trim();
+      if (cleaned.startsWith('```')) {
+        cleaned = cleaned.replace(/^```/, '').trim();
+      }
+      if (cleaned.endsWith('```')) {
+        cleaned = cleaned.replace(/```$/, '').trim();
+      }
+    }
+    
+    // Strategy 3: Find JSON object boundaries if still not parsing
+    if (!cleaned.startsWith('{')) {
+      const jsonStart = cleaned.indexOf('{');
+      const jsonEnd = cleaned.lastIndexOf('}');
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+        cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+      }
+    }
     
     return JSON.parse(cleaned) as T;
-  } catch {
-    console.warn('[EstimatorService] Failed to parse JSON response:', text.slice(0, 200));
+  } catch (e) {
+    console.warn('[EstimatorService] Failed to parse JSON response:', text.slice(0, 300));
+    console.warn('[EstimatorService] Parse error:', e);
     return null;
   }
 };
@@ -165,6 +238,7 @@ const parseJsonResponse = <T>(text: string): T | null => {
 /**
  * Call OpenRouter with the OpenAI-compatible endpoint.
  * Includes mandatory attribution headers required by OpenRouter.
+ * Supports both json_object and json_schema response formats.
  * 
  * IMPORTANT: This function enforces zero-history mode - only the messages 
  * passed in this call are sent. No conversation history is preserved.
@@ -174,13 +248,12 @@ const callOpenRouter = async (params: {
   messages: Array<{ role: string; content: string | Array<{ type: string; text?: string; image_url?: { url: string } }> }>;
   temperature?: number;
   max_tokens?: number;
-  response_format?: { type: string };
+  response_format?: { type: string; json_schema?: unknown };
 }): Promise<string> => {
   const { model, messages, temperature = 0.3, max_tokens = 2048, response_format } = params;
   
   // Zero-history enforcement: Ensure only system + user messages are sent
-  // This prevents token bloat from conversation history
-  const sanitizedMessages = messages.slice(0, 2); // Only take first 2 messages (system + user)
+  const sanitizedMessages = messages.slice(0, 2);
   if (sanitizedMessages.length !== messages.length) {
     console.warn('[EstimatorService] Truncated message array to enforce zero-history mode');
   }
@@ -195,7 +268,7 @@ const callOpenRouter = async (params: {
     max_tokens 
   };
   
-  // Add response_format if provided (forces raw JSON output from OpenRouter)
+  // Add response_format if provided (forces structured output from OpenRouter)
   if (response_format) {
     requestBody.response_format = response_format;
   }
@@ -231,6 +304,29 @@ const callOpenRouter = async (params: {
 };
 
 /**
+ * Wrapper that calls OpenRouter with the json_schema response format
+ * for strict structured output validation.
+ */
+const callOpenRouterWithSchema = async (params: {
+  model: string;
+  messages: Array<{ role: string; content: string }>;
+  temperature?: number;
+  max_tokens?: number;
+}): Promise<string> => {
+  return callOpenRouter({
+    ...params,
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "ConstructionEstimate",
+        strict: true,
+        schema: CONSTRUCTION_ESTIMATE_SCHEMA
+      }
+    }
+  });
+};
+
+/**
  * Retry wrapper for API calls with exponential backoff.
  */
 const retryWithBackoff = async <T>(
@@ -243,7 +339,6 @@ const retryWithBackoff = async <T>(
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const result = await fn();
-      // Validate result is not empty
       if (typeof result === 'string' && !result.trim()) {
         throw new Error('Empty response from API');
       }
@@ -252,9 +347,8 @@ const retryWithBackoff = async <T>(
       lastError = error instanceof Error ? error : new Error(String(error));
       console.warn(`[EstimatorService] Attempt ${attempt + 1} failed: ${lastError.message}`);
 
-      // Don't delay on the last attempt
       if (attempt < maxRetries - 1) {
-        const delay = baseDelay * Math.pow(2, attempt); // Exponential backoff
+        const delay = baseDelay * Math.pow(2, attempt);
         console.log(`[EstimatorService] Retrying in ${delay}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
@@ -314,56 +408,51 @@ Return ONLY the JSON.`;
   return parsed;
 };
 
-// ── Pipeline Stage 2: Claude Scoping  ───────────────────────────────────────
+// ── Pipeline Stage 2: Claude Scoping (json_schema)  ─────────────────────────
 
 const generateScopeOfWork = async (
   visionResult: GeminiVisionResponse,
   userNote?: string,
 ): Promise<ClaudeScopingResponse> => {
   const sanitizedNote = userNote ? sanitize(userNote, 300) : '';
-
-  // Input compression: convert detected_items to comma-separated string
-  // This reduces token count vs sending full JSON
   const detectedItemsStr = visionResult.detected_items.join(', ');
 
-  const systemPrompt = `You are a senior general contractor and estimator. Given the vision analysis below, produce a professional, itemized Scope of Work list.
+  const systemPrompt = `You are a Senior Residential Restoration Estimator with 20 years of experience in Xactimate and RSMeans. Your task is to transform raw visual findings into a professional, itemized Scope of Work (SOW).
 
-Return ONLY a JSON object with these exact keys:
-{
-  "itemized_tasks": [
-    { "task": "Patch and skim 12 sq ft drywall section", "materials": ["joint compound", "fiberglass tape", "primer"], "estimated_cost": 185 }
-  ],
-  "estimated_cost": 420,
-  "assumptions": ["No structural damage", "Paint matching available"]
-}
+Operational Rules:
+- Regional Pricing: Adjust all unit prices based on the provided ZIP code using industry-standard labor and material databases.
+- Trade-Specific Logic: If a repair is visible (e.g., drywall hole), automatically include the necessary sub-tasks (e.g., debris removal, taping, sanding, and 2 coats of paint).
+- Calculation: Total Replacement Cash Value (RCV) for each line item is calculated as RCV = (Quantity x UnitPrice).
+- Business Logic: Apply a standard 10/10 split (10% Overhead and 10% Profit) to the subtotal = 20% combined.
+- Zero Prose: Output only the raw JSON object. Do not include markdown backticks or conversational filler.
 
-Rules:
-- Each itemized_tasks entry represents one billable task
-- materials is an array of material names needed
-- estimated_cost is a realistic USD number (materials + labor) for the given sqft
-- estimated_cost (top-level) is the SUM of all task estimated_cost values
-- Round costs to nearest 5
+Pricing Rules:
+- Each line_item must include: trade_code, description, quantity, unit, unit_price, line_total
+- Use Xactimate-style trade codes (e.g., DRY, PLM, PNT, DEM, INS, ELE)
+- Valid units: SF (square feet), LF (linear feet), EA (each), LS (lump sum), HR (hours), SH (sheet)
+- subtotal is the SUM of all line_total values
+- overhead_profit is 20 percent of subtotal (10/10 combined)
+- total_estimate = subtotal + overhead_profit
 
-Output ONLY the JSON.`;
+Output ONLY the JSON matching the schema.`;
 
-  // Compressed prompt: uses simple string instead of full JSON object
-  const userPrompt = `Detected items: ${detectedItemsStr}
-Estimated area: ${visionResult.estimated_sqft} sq ft
-Damage severity: ${visionResult.damage_severity}
-${sanitizedNote ? `Additional user note: ${sanitizedNote}` : ''}
+  const userPrompt = `VISION FINDINGS:
+- Detected items: ${detectedItemsStr}
+- Estimated area: ${visionResult.estimated_sqft} sq ft
+- Damage severity: ${visionResult.damage_severity}
+- Analysis notes: ${visionResult.notes}
+${sanitizedNote ? `\nAdditional user note: ${sanitizedNote}` : ''}
 
-Generate itemized scope of work as JSON only.`;
+TASK: Generate a complete repair estimate with all line items needed to fully restore the damaged area. Include logical secondary repairs (e.g., painting after drywall patch, insulation replacement after plumbing).`;
 
   const modelId = 'anthropic/claude-sonnet-4.6';
   console.log("[Estimator] Handing off to Claude:", modelId, "| Items:", detectedItemsStr);
 
-  // max_tokens: 600 to protect $10 budget - we only need concise JSON task list
-  // response_format: json_object forces OpenRouter to return raw JSON without markdown wrapping
-  const raw = await callOpenRouter({
+  // Uses json_schema for strict structured output, 2000 tokens to prevent truncation
+  const raw = await callOpenRouterWithSchema({
     model: modelId,
-    temperature: 0.3,
-    max_tokens: 600,
-    response_format: { type: 'json_object' },
+    temperature: 0.1,
+    max_tokens: 2000,
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt },
@@ -375,11 +464,13 @@ Generate itemized scope of work as JSON only.`;
     throw new Error('Claude returned non-parseable response');
   }
 
-  // Ensure estimated_cost matches the sum
-  parsed.estimated_cost = parsed.itemized_tasks.reduce(
-    (sum, t) => sum + (t.estimated_cost ?? 0),
+  // Recalculate totals for accuracy
+  parsed.subtotal = parsed.line_items.reduce(
+    (sum, item) => sum + (item.line_total ?? 0),
     0,
   );
+  parsed.overhead_profit = Math.round(parsed.subtotal * 0.20 / 5) * 5; // 20% combined (10/10)
+  parsed.total_estimate = parsed.subtotal + parsed.overhead_profit;
 
   return parsed;
 };
@@ -396,7 +487,6 @@ export const runEstimatorPipeline = async (
   images: File[],
   userNote?: string,
 ): Promise<EstimatorResult> => {
-  // Rate-limit guard
   if (!checkRateLimit()) {
     throw new Error('Rate limit exceeded. Please try again later or contact support.');
   }
@@ -405,27 +495,30 @@ export const runEstimatorPipeline = async (
     throw new Error('No images provided. Please upload at least one photo.');
   }
 
-  // Stage 1: Vision - compress image first to reduce token load
+  // Stage 1: Vision
   const primaryImage = images[0];
   const base64 = await compressImage(primaryImage);
-
   const visionResult = await analyzeImage(base64, userNote);
 
   // Stage 2: Scoping
   const scopeResult = await generateScopeOfWork(visionResult, userNote);
 
   return {
+    project_overview: scopeResult.project_overview || `Restoration estimate for: ${visionResult.detected_items.join(', ')}`,
     detected_items: visionResult.detected_items,
     estimated_sqft: visionResult.estimated_sqft,
-    itemized_tasks: scopeResult.itemized_tasks,
-    estimated_cost: scopeResult.estimated_cost,
+    line_items: scopeResult.line_items,
+    subtotal: scopeResult.subtotal,
+    overhead_profit: scopeResult.overhead_profit,
+    total_estimate: scopeResult.total_estimate,
+    exclusions: scopeResult.exclusions || [],
   };
 };
 
 /**
  * Text-only estimation using Claude for scope generation.
  * Used when user provides a description but no photos.
- * Includes retry logic with exponential backoff for resilience against provider-side issues.
+ * Includes retry logic with exponential backoff.
  */
 export const generateTextEstimate = async (
   userNote: string,
@@ -436,35 +529,30 @@ export const generateTextEstimate = async (
 
   const sanitizedNote = sanitize(userNote, 500);
 
-  const systemPrompt = `You are a senior general contractor and estimator. Given the user's description of a home repair issue below, produce a professional, itemized Scope of Work list.
+  const systemPrompt = `You are a Senior Residential Restoration Estimator with 20 years of experience in Xactimate and RSMeans. Your task is to transform user-reported issues into a professional, itemized Scope of Work (SOW).
 
-Return ONLY a JSON object with these exact keys:
-{
-  "detected_items": ["issue1", "issue2", ...],
-  "estimated_sqft": 0,
-  "itemized_tasks": [
-    { "task": "Patch and skim drywall section", "materials": ["joint compound", "fiberglass tape", "primer"], "estimated_cost": 185 }
-  ],
-  "estimated_cost": 420
-}
+Operational Rules:
+- Regional Pricing: Adjust all unit prices based on the provided ZIP code using industry-standard labor and material databases.
+- Trade-Specific Logic: If a repair is reported, automatically include the necessary sub-tasks.
+- Calculation: Total Replacement Cash Value (RCV) for each line item is calculated as RCV = (Quantity x UnitPrice).
+- Business Logic: Apply a standard 10/10 split (10% Overhead and 10% Profit) to the subtotal = 20% combined.
+- Zero Prose: Output only the raw JSON object. Do not include markdown backticks or conversational filler.
 
-Rules:
-- detected_items should list the issues identified from the description
-- estimated_sqft should be an educated guess based on the description (or 0 if impossible to estimate)
-- Each itemized_tasks entry represents one billable task
-- materials is an array of material names needed for that task
-- estimated_cost is realistic USD numbers (materials + labor)
-- estimated_cost (top-level) is the SUM of all task estimated_cost values
-- Round costs to nearest 5
+Pricing Rules:
+- Each line_item must include: trade_code, description, quantity, unit, unit_price, line_total
+- Use Xactimate-style trade codes (e.g., DRY, PLM, PNT, DEM, INS, ELE)
+- Valid units: SF (square feet), LF (linear feet), EA (each), LS (lump sum), HR (hours), SH (sheet)
+- subtotal is the SUM of all line_total values
+- overhead_profit is 20 percent of subtotal (10/10 combined)
+- total_estimate = subtotal + overhead_profit
 
-Output ONLY the JSON.`;
+Output ONLY the JSON matching the schema.`;
 
   const makeApiCall = async (): Promise<string> => {
-    return callOpenRouter({
+    return callOpenRouterWithSchema({
       model: 'anthropic/claude-sonnet-4.6',
-      temperature: 0.3,
-      max_tokens: 600,
-      response_format: { type: 'json_object' },
+      temperature: 0.1,
+      max_tokens: 2000,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `Repair request: ${sanitizedNote}` },
@@ -472,19 +560,20 @@ Output ONLY the JSON.`;
     });
   };
 
-  // Retry up to 3 times with exponential backoff for provider-side issues
   const raw = await retryWithBackoff(makeApiCall, 3, 1500);
 
   const parsed = parseJsonResponse<EstimatorResult>(raw);
-  if (!parsed || !parsed.itemized_tasks || parsed.itemized_tasks.length === 0) {
+  if (!parsed || !parsed.line_items || parsed.line_items.length === 0) {
     throw new Error('Failed to generate estimate from description. Please provide more details.');
   }
 
-  // Ensure estimated_cost matches the sum
-  parsed.estimated_cost = parsed.itemized_tasks.reduce(
-    (sum, t) => sum + (t.estimated_cost ?? 0),
+  // Recalculate totals for accuracy
+  parsed.subtotal = parsed.line_items.reduce(
+    (sum, item) => sum + (item.line_total ?? 0),
     0,
   );
+  parsed.overhead_profit = Math.round(parsed.subtotal * 0.20 / 5) * 5; // 20% combined (10/10)
+  parsed.total_estimate = parsed.subtotal + parsed.overhead_profit;
 
   return parsed;
 };
@@ -493,12 +582,16 @@ Output ONLY the JSON.`;
  * Dry-run fallback: returns mock estimate when no images or description provided.
  */
 export const getFallbackEstimate = (): EstimatorResult => ({
+  project_overview: 'General maintenance assessment',
   detected_items: ['General maintenance item'],
   estimated_sqft: 0,
-  itemized_tasks: [
-    { task: 'Initial assessment', materials: ['N/A'], estimated_cost: 0 },
+  line_items: [
+    { trade_code: 'GEN', description: 'Initial assessment', quantity: 1, unit: 'EA', unit_price: 0, line_total: 0 },
   ],
-  estimated_cost: 0,
+  subtotal: 0,
+  overhead_profit: 0,
+  total_estimate: 0,
+  exclusions: [],
 });
 
 export default { runEstimatorPipeline, getFallbackEstimate, generateTextEstimate };
