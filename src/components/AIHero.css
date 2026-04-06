@@ -1,38 +1,15 @@
 /**
- * AIHero Component Styles - Silk Neomorphic Design
- * Mobile-first approach with 44x44px minimum touch targets
+ * AIHero Component Styles - Clean Minimal Design
+ * Mobile-first, 44x44px minimum touch targets, 12px border radius
  */
 
 .ai-hero {
   position: relative;
   margin: 16px;
-  border-radius: 20px;
-  background: linear-gradient(135deg, var(--primary, #6366f1), var(--accent, #7c3aed));
-  padding: 28px 20px;
-  overflow: hidden;
-  box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.12), -6px -6px 12px rgba(255, 255, 255, 0.3);
-}
-
-/* Background decorative circles */
-.hero-bg-circle {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  pointer-events: none;
-}
-
-.hero-bg-circle--tl {
-  top: -30px;
-  right: -20px;
-  width: 120px;
-  height: 120px;
-}
-
-.hero-bg-circle--br {
-  bottom: -20px;
-  right: 40px;
-  width: 80px;
-  height: 80px;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 32px 24px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .hero-content {
@@ -40,53 +17,24 @@
   z-index: 1;
 }
 
-/* Location Badge */
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  color: white;
-  margin-bottom: 14px;
-}
-
-.badge-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #6ee7b7;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
 /* Heading */
 .hero-heading {
-  font-family: 'Syne', var(--font-family, sans-serif);
-  font-size: 26px;
-  font-weight: 800;
-  color: white;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f172a;
   line-height: 1.2;
-  margin: 0 0 10px;
-}
-
-.hero-highlight {
-  color: #fde68a;
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
 }
 
 /* Subtitle */
 .hero-subtitle {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.85);
+  font-size: 15px;
+  color: #64748b;
   line-height: 1.5;
-  margin: 0 0 22px;
+  margin: 0 0 24px;
+  max-width: 360px;
 }
 
 /* CTA Button */
@@ -95,91 +43,61 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 14px 26px;
-  background: linear-gradient(135deg, var(--orange, #ff6b00), var(--orange-dark, #e55a00));
-  color: white;
+  padding: 14px 24px;
+  background: #6366f1;
+  color: #ffffff;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   border: none;
-  border-radius: 14px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 8px 20px rgba(255, 107, 0, 0.4);
   min-width: 44px;
   min-height: 44px;
 }
 
+.hero-cta-btn:hover {
+  background: #4f46e5;
+  transform: translateY(-1px);
+}
+
 .hero-cta-btn:active {
-  transform: scale(0.97);
-  box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
-}
-
-.hero-cta-btn svg {
-  flex-shrink: 0;
-}
-
-/* Hero Image (optional) */
-.hero-image-wrapper {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 140px;
-  height: 140px;
-  overflow: hidden;
-  border-radius: 20px 0 0 0;
-  opacity: 0.9;
-}
-
-.hero-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  transform: translateY(0) scale(0.98);
+  background: #4338ca;
 }
 
 /* Responsive breakpoints */
 @media (min-width: 768px) {
   .ai-hero {
-    padding: 36px 28px;
-  }
-  
-  .hero-heading {
-    font-size: 32px;
-  }
-  
-  .hero-subtitle {
-    font-size: 15px;
-    margin-bottom: 28px;
-  }
-  
-  .hero-image-wrapper {
-    width: 180px;
-    height: 180px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .ai-hero {
     margin: 24px;
-    padding: 44px 36px;
+    padding: 40px 32px;
   }
   
   .hero-heading {
     font-size: 36px;
   }
+  
+  .hero-subtitle {
+    font-size: 17px;
+    max-width: 480px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .ai-hero {
+    margin: 32px;
+    padding: 48px 40px;
+  }
 }
 
 /* Focus states for accessibility */
 .hero-cta-btn:focus-visible {
-  outline: 2px solid white;
+  outline: 2px solid #6366f1;
   outline-offset: 2px;
 }
 
 /* Reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
-  .badge-dot {
-    animation: none;
-  }
-  
   .hero-cta-btn {
     transition: none;
   }

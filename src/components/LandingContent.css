@@ -1,0 +1,374 @@
+/**
+ * LandingContent.css - Styles for landing page containers and sections
+ * Clean, minimal design with mobile-first responsive layout
+ */
+
+/* ===========================
+   Landing Content Wrapper
+   =========================== */
+
+.landing-content {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.landing-section-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.landing-section-header {
+  text-align: center;
+  margin-bottom: 48px;
+  padding-top: 48px;
+}
+
+.landing-section-badge {
+  display: inline-block;
+  padding: 8px 16px;
+  background: #e0f7f6;
+  color: #008a81;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-radius: 100px;
+  margin-bottom: 20px;
+}
+
+.landing-section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 16px;
+  line-height: 1.2;
+}
+
+.landing-section-subtitle {
+  font-size: 16px;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ===========================
+   Hero Image Section
+   =========================== */
+
+.landing-hero-image {
+  position: relative;
+  width: 100%;
+  margin-bottom: 64px;
+}
+
+.image-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.hero-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.image-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 32px 24px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+  display: flex;
+  justify-content: center;
+}
+
+.image-text {
+  text-align: center;
+  color: #ffffff;
+  max-width: 480px;
+}
+
+.image-text h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.image-text p {
+  font-size: 14px;
+  opacity: 0.9;
+  margin: 0 0 20px;
+}
+
+.image-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #6366f1;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.image-cta-btn:hover {
+  background: #4f46e5;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+}
+
+.image-cta-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.image-cta-btn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* ===========================
+   Workflow Section
+   =========================== */
+
+.landing-workflow-section {
+  background: #f8fafc;
+  padding-bottom: 64px;
+}
+
+.workflow-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.workflow-card {
+  position: relative;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px 24px 24px 72px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+}
+
+.workflow-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+}
+
+.workflow-step-number {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #6366f1, #7c3aed);
+  color: #ffffff;
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  border-radius: 10px;
+}
+
+.workflow-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  color: #6366f1;
+  margin-bottom: 12px;
+}
+
+.workflow-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 8px;
+}
+
+.workflow-description {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ===========================
+   Trust Indicators Section
+   =========================== */
+
+.landing-trust-section {
+  background: #ffffff;
+  padding: 40px 0;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.trust-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.trust-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.trust-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: #e0f7f6;
+  border-radius: 12px;
+  color: #00b4a8;
+}
+
+.trust-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* ===========================
+   Features Section
+   =========================== */
+
+.landing-features-section {
+  background: #f8fafc;
+  padding-bottom: 64px;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.feature-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 28px 24px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.feature-card h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 10px;
+}
+
+.feature-card > p {
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0 0 10px;
+}
+
+.feature-placeholder {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin: 0;
+  font-style: italic;
+}
+
+/* ===========================
+   Responsive Breakpoints
+   =========================== */
+
+@media (min-width: 640px) {
+  .landing-section-title {
+    font-size: 32px;
+  }
+
+  .workflow-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .trust-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .landing-section-container {
+    padding: 0 32px;
+  }
+
+  .landing-section-header {
+    padding-top: 64px;
+  }
+
+  .landing-section-title {
+    font-size: 36px;
+  }
+
+  .image-text h2 {
+    font-size: 32px;
+  }
+
+  .image-text p {
+    font-size: 16px;
+  }
+
+  .image-overlay {
+    padding: 48px 32px;
+  }
+
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .landing-workflow-section {
+    padding-bottom: 80px;
+  }
+
+  .workflow-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .features-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .workflow-card,
+  .image-cta-btn {
+    transition: none;
+  }
+}

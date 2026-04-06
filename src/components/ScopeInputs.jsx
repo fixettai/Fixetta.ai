@@ -1,25 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import './ScopeInputs.css';
+
+// Zod validation imported from centralized validator
 import { validateScopeOfWork, validateContactInfo } from '../utils/validator';
 
+const CATEGORIES = [
+  { key: 'plumbing', label: 'Plumbing', icon: '🔧' },
+  { key: 'electrical', label: 'Electric', icon: '⚡' },
+  { key: 'furniture', label: 'Assembly', icon: '🪑' },
+  { key: 'drywall', label: 'Drywall', icon: '🪟' },
+  { key: 'painting', label: 'Painting', icon: '🎨' },
+  { key: 'roof', label: 'Roofing', icon: '🏠' },
+];
+
 /**
- * ScopeInputs Component - Form for scope of work and contact information
+ * ScopeInputs Component - Clean minimal form for issue description
+ * Mobile-first with 44x44px touch targets and 12px border radius
  * Uses Zod validation for input sanitization
- * Mobile-first with neomorphic design, 44x44px minimum touch targets
  */
 export default function ScopeInputs({
   initialData = {},
-  categories = [
-    { key: 'plumbing', label: 'Plumbing', icon: '🔧' },
-    { key: 'electrical', label: 'Electric', icon: '⚡' },
-    { key: 'furniture', label: 'Assembly', icon: '🪑' },
-    { key: 'moving', label: 'Moving', icon: '📦' },
-    { key: 'painting', label: 'Painting', icon: '🎨' },
-    { key: 'drywall', label: 'Drywall', icon: '🪟' },
-    { key: 'roof', label: 'Roofing', icon: '🏠' },
-    { key: 'default', label: 'Other', icon: '✨' },
-  ],
-  onSubmit,
+  onChange,
   onError,
 }) {
   const [formData, setFormData] = useState({
@@ -34,67 +35,95 @@ export default function ScopeInputs({
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
 
-  // Handle input change
-  const handleChange = (e) => {
+  // Handle input change with validation feedback
+  const handleChange = useCallback((e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const newData = { ...formData, [name]: value };
+    setFormData(newData);
     
-    // Clear error on change if field was touched
-    if (touched[name]) {
+    // Clear error on field change if it was previously invalid
+    if (errors[name]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[name];
         return newErrors;
       });
     }
-  };
+    
+    if (onChange) onChange(newData);
+  }, [formData, onChange, errors]);
 
-  // Handle blur for validation
-  const handleBlur = (e) => {
-    const { name } = e.target;
+  // Handle blur for field-level validation
+  const handleBlur = useCallback((e) => {
+    const { name, value } = e.target;
     setTouched((prev) => ({ ...prev, [name]: true }));
-    validateField(name, formData[name]);
-  };
+    validateSingleField(name, value);
+  }, [formData, touched]);
 
-  // Validate single field
-  const validateField = (fieldName, value) => {
+  // Validate a single field
+  const validateSingleField = (fieldName, value) => {
     let result;
     if (['description', 'category'].includes(fieldName)) {
       result = validateScopeOfWork({ 
-        description: formData.description || value, 
-        category: formData.category || value, 
+        description: fieldName === 'description' ? value : formData.description, 
+        category: fieldName === 'category' ? value : formData.category, 
         photos: [] 
       });
     } else {
       result = validateContactInfo({ 
-        name: formData.name || value, 
-        email: formData.email || value, 
-        phone: formData.phone || value, 
-        zip: formData.zip || value 
+        name: fieldName === 'name' ? value : formData.name, 
+        email: fieldName === 'email' ? value : formData.email, 
+        phone: fieldName === 'phone' ? value : formData.phone, 
+        zip: fieldName === 'zip' ? value : formData.zip 
       });
     }
     
     if (!result.success && result.errors[fieldName]) {
       setErrors((prev) => ({ ...prev, [fieldName]: result.errors[fieldName][0] }));
+      if (onError) onError(result.errors);
       return false;
     }
-    setErrors((prev) => {
-      const newErrors = { ...prev };
-      delete newErrors[fieldName];
-      return newErrors;
-    });
     return true;
   };
 
-  // Handle form submission
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  // Handle category selection
+  const handleCategorySelect = (key) => {
+    const newData = { ...formData, category: key };
+    setFormData(newData);
+    setTouched((prev) => ({ ...prev, category: true }));
     
-    // Mark all fields as touched
+    // Validate category
+    const result = validateScopeOfWork({ 
+      description: formData.description, 
+      category: key, 
+      photos: [] 
+    });
+    
+    if (!result.success && result.errors.category) {
+      setErrors((prev) => ({ ...prev, category: result.errors.category[0] }));
+    } else {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.category;
+        return newErrors;
+      });
+    }
+    
+    if (onChange) onChange(newData);
+  };
+
+  // Expose validation for external use (e.g., submit button)
+  React.useImperativeHandle(onChange?.ref, () => ({
+    validate: () => validateForm(),
+    getData: () => formData,
+    getErrors: () => errors,
+  }), [formData, errors]);
+
+  // Validate the entire form
+  const validateForm = () => {
     const allTouched = Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {});
     setTouched(allTouched);
     
-    // Validate all fields
     const scopeResult = validateScopeOfWork({
       description: formData.description,
       category: formData.category,
@@ -122,157 +151,128 @@ export default function ScopeInputs({
       }
       setErrors(allErrors);
       if (onError) onError(allErrors);
-      return;
+      return { success: false, errors: allErrors };
     }
     
-    if (onSubmit) onSubmit(formData);
+    return { success: true, data: formData };
   };
 
   return (
-    <form className="scope-inputs-form" onSubmit={handleSubmit} noValidate>
-      {/* Scope of Work Section */}
-      <section className="form-section neo-inset" aria-label="Scope of Work">
-        <h2 className="form-section-title">Scope of Work</h2>
-        
-        {/* Category Selection */}
-        <div className="form-group">
-          <label htmlFor="category" className="form-label">Service Category</label>
-          <div className="category-grid" role="radiogroup" aria-label="Select a service category">
-            {categories.map((cat) => (
-              <button
-                key={cat.key}
-                type="button"
-                className={`category-chip neo-btn ${formData.category === cat.key ? 'selected' : ''}`}
-                onClick={() => {
-                  setFormData((prev) => ({ ...prev, category: cat.key }));
-                  validateField('category', cat.key);
-                }}
-                aria-pressed={formData.category === cat.key}
-                style={{ minHeight: 44 }}
-              >
-                <span className="category-icon" aria-hidden="true">{cat.icon}</span>
-                <span className="category-label">{cat.label}</span>
-              </button>
-            ))}
-          </div>
-          {errors.category && touched.category && (
-            <span className="form-error" role="alert">{errors.category}</span>
-          )}
+    <div className="scope-inputs" role="form" aria-label="Describe your issue">
+      {/* Category Selection */}
+      <section className="form-section">
+        <label className="form-label">What needs fixing?</label>
+        <div className="category-grid" role="radiogroup" aria-label="Select a service category">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat.key}
+              type="button"
+              className={`category-chip ${formData.category === cat.key ? 'selected' : ''} ${errors.category && touched.category ? 'error' : ''}`}
+              onClick={() => handleCategorySelect(cat.key)}
+              aria-pressed={formData.category === cat.key}
+            >
+              <span className="category-icon" aria-hidden="true">{cat.icon}</span>
+              <span className="category-label">{cat.label}</span>
+            </button>
+          ))}
         </div>
+        {errors.category && touched.category && (
+          <span className="form-error" role="alert">{errors.category}</span>
+        )}
+      </section>
 
-        {/* Description Textarea */}
-        <div className="form-group">
-          <label htmlFor="description" className="form-label">Describe the Issue</label>
-          <textarea
-            id="description"
-            name="description"
-            className={`form-textarea neo-input ${errors.description ? 'has-error' : ''}`}
-            value={formData.description}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            placeholder="e.g., Leaking pipe under kitchen sink, water dripping..."
-            maxLength={2000}
-            rows={4}
-            aria-describedby={errors.description ? 'description-error' : undefined}
-            aria-invalid={!!errors.description}
-          />
-          <div className="char-counter">{formData.description.length}/2000</div>
-          {errors.description && touched.description && (
+      {/* Description */}
+      <section className="form-section">
+        <label htmlFor="description" className="form-label">Describe the issue</label>
+        <textarea
+          id="description"
+          name="description"
+          className={`form-input ${errors.description ? 'has-error' : ''}`}
+          value={formData.description}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          placeholder="e.g., Leaking pipe under kitchen sink..."
+          maxLength={2000}
+          rows={4}
+          aria-describedby={errors.description ? 'description-error' : 'description-counter'}
+          aria-invalid={!!errors.description}
+        />
+        <div className="input-footer">
+          {errors.description && touched.description ? (
             <span className="form-error" id="description-error" role="alert">{errors.description}</span>
+          ) : (
+            <span className="char-counter" id="description-counter">{formData.description.length}/2000</span>
           )}
         </div>
       </section>
 
-      {/* Contact Information Section */}
-      <section className="form-section neo-inset" aria-label="Contact Information">
-        <h2 className="form-section-title">Contact Information</h2>
+      {/* Contact Info - Collapsible */}
+      <section className="form-section">
+        <label className="form-label">Contact info</label>
         
-        {/* Name */}
-        <div className="form-group">
-          <label htmlFor="name" className="form-label">Full Name</label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            className={`form-input neo-input ${errors.name ? 'has-error' : ''}`}
-            value={formData.name}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            placeholder="John Doe"
-            aria-describedby={errors.name ? 'name-error' : undefined}
-            aria-invalid={!!errors.name}
-            style={{ minHeight: 44 }}
-          />
-          {errors.name && touched.name && (
-            <span className="form-error" id="name-error" role="alert">{errors.name}</span>
-          )}
-        </div>
+        <input
+          type="text"
+          name="name"
+          className={`form-input ${errors.name ? 'has-error' : ''}`}
+          value={formData.name}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          placeholder="Full Name"
+          aria-describedby={errors.name ? 'name-error' : undefined}
+          aria-invalid={!!errors.name}
+        />
+        {errors.name && touched.name && (
+          <span className="form-error" id="name-error" role="alert">{errors.name}</span>
+        )}
 
-        {/* Email */}
-        <div className="form-group">
-          <label htmlFor="email" className="form-label">Email Address</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            className={`form-input neo-input ${errors.email ? 'has-error' : ''}`}
-            value={formData.email}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            placeholder="john@example.com"
-            aria-describedby={errors.email ? 'email-error' : undefined}
-            aria-invalid={!!errors.email}
-            style={{ minHeight: 44 }}
-          />
-          {errors.email && touched.email && (
-            <span className="form-error" id="email-error" role="alert">{errors.email}</span>
-          )}
-        </div>
+        <input
+          type="email"
+          name="email"
+          className={`form-input ${errors.email ? 'has-error' : ''}`}
+          value={formData.email}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          placeholder="Email address"
+          aria-describedby={errors.email ? 'email-error' : undefined}
+          aria-invalid={!!errors.email}
+        />
+        {errors.email && touched.email && (
+          <span className="form-error" id="email-error" role="alert">{errors.email}</span>
+        )}
 
-        {/* Phone */}
-        <div className="form-group">
-          <label htmlFor="phone" className="form-label">Phone Number</label>
-          <input
-            type="tel"
-            id="phone"
-            name="phone"
-            className={`form-input neo-input ${errors.phone ? 'has-error' : ''}`}
-            value={formData.phone}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            placeholder="(555) 123-4567"
-            aria-describedby={errors.phone ? 'phone-error' : undefined}
-            aria-invalid={!!errors.phone}
-            style={{ minHeight: 44 }}
-          />
-          {errors.phone && touched.phone && (
-            <span className="form-error" id="phone-error" role="alert">{errors.phone}</span>
-          )}
-        </div>
+        <input
+          type="tel"
+          name="phone"
+          className={`form-input ${errors.phone ? 'has-error' : ''}`}
+          value={formData.phone}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          placeholder="Phone number"
+          aria-describedby={errors.phone ? 'phone-error' : undefined}
+          aria-invalid={!!errors.phone}
+        />
+        {errors.phone && touched.phone && (
+          <span className="form-error" id="phone-error" role="alert">{errors.phone}</span>
+        )}
 
-        {/* ZIP Code */}
-        <div className="form-group">
-          <label htmlFor="zip" className="form-label">ZIP Code</label>
-          <input
-            type="text"
-            id="zip"
-            name="zip"
-            className={`form-input neo-input ${errors.zip ? 'has-error' : ''}`}
-            value={formData.zip}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            placeholder="23219"
-            maxLength={5}
-            pattern="\d{5}"
-            aria-describedby={errors.zip ? 'zip-error' : undefined}
-            aria-invalid={!!errors.zip}
-            style={{ minHeight: 44 }}
-          />
-          {errors.zip && touched.zip && (
-            <span className="form-error" id="zip-error" role="alert">{errors.zip}</span>
-          )}
-        </div>
+        <input
+          type="text"
+          name="zip"
+          className={`form-input ${errors.zip ? 'has-error' : ''}`}
+          value={formData.zip}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          placeholder="ZIP code"
+          maxLength={5}
+          pattern="\d{5}"
+          inputMode="numeric"
+          aria-describedby={errors.zip ? 'zip-error' : undefined}
+          aria-invalid={!!errors.zip}
+        />
+        {errors.zip && touched.zip && (
+          <span className="form-error" id="zip-error" role="alert">{errors.zip}</span>
+        )}
       </section>
-    </form>
+    </div>
   );
 }

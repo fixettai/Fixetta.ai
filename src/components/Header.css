@@ -1,6 +1,6 @@
 /**
- * Header Component Styles - Silk Neomorphic Design
- * Mobile-first approach with 44x44px minimum touch targets
+ * Header Component Styles - Clean Minimal Design
+ * Mobile-first, 44x44px minimum touch targets, 12px border radius
  */
 
 .fixetta-header {
@@ -9,10 +9,11 @@
   left: 0;
   right: 0;
   z-index: 100;
-  background: var(--surface, #e8eaf0);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   padding: 12px 16px;
-  border-radius: 0 0 16px 16px;
-  box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.08), -6px -6px 12px rgba(255, 255, 255, 0.6);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .header-content {
@@ -26,7 +27,7 @@
 .header-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .header-right {
@@ -35,108 +36,60 @@
   gap: 8px;
 }
 
-/* Brand Styling */
-.brand {
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 12px;
-  transition: box-shadow 0.2s ease;
-}
-
-.brand:active {
-  box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.06), inset -2px -2px 4px rgba(255, 255, 255, 0.5);
-}
-
-.brand-name {
-  font-family: 'Syne', var(--font-family, sans-serif);
-  font-weight: 800;
-  font-size: 20px;
-  color: var(--text-primary, #1e293b);
-  line-height: 1.1;
-}
-
-.brand-accent {
-  color: var(--primary, #6366f1);
-}
-
-.brand-location {
-  font-size: 11px;
-  color: var(--text-secondary, #64748b);
+/* Brand/Logo */
+.header-brand {
   display: flex;
   align-items: center;
-  margin-top: 2px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 12px;
+  transition: background-color 0.2s ease;
 }
 
-/* Neomorphic Button Base */
-.neo-btn {
+.header-brand:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.header-logo {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Icon Button */
+.header-back-btn,
+.header-icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--surface, #e8eaf0);
-  border: none;
-  border-radius: 12px;
-  padding: 10px;
-  color: var(--text-primary, #1e293b);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.08), -3px -3px 6px rgba(255, 255, 255, 0.6);
   min-width: 44px;
   min-height: 44px;
+  padding: 12px;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  color: #1e293b;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
-.neo-btn:active {
-  box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.06), inset -2px -2px 4px rgba(255, 255, 255, 0.5);
-  transform: scale(0.98);
+.header-back-btn:hover,
+.header-icon-btn:hover {
+  background-color: rgba(0, 0, 0, 0.04);
 }
 
-/* Notification Badge */
-.header-notif-btn {
-  position: relative;
+.header-back-btn:active,
+.header-icon-btn:active {
+  background-color: rgba(0, 0, 0, 0.08);
+  transform: scale(0.95);
 }
 
-.notif-badge {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  background: var(--error, #ef4444);
-  color: white;
-  font-size: 10px;
-  font-weight: 700;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  border: 2px solid var(--surface, #e8eaf0);
-}
-
-/* Avatar Button */
-.header-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  overflow: hidden;
-  padding: 0;
-}
-
-.avatar-initials {
-  font-size: 14px;
-  font-weight: 700;
-  color: white;
-  background: linear-gradient(135deg, var(--primary, #6366f1), var(--accent, #7c3aed));
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Back Button */
-.header-back-btn {
-  padding: 8px;
+/* Focus states for accessibility */
+.header-back-btn:focus-visible,
+.header-icon-btn:focus-visible,
+.header-brand:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
 }
 
 /* Responsive breakpoints */
@@ -145,28 +98,131 @@
     padding: 12px 24px;
   }
   
-  .brand-name {
-    font-size: 22px;
+  .header-logo {
+    height: 36px;
   }
 }
 
 @media (min-width: 1024px) {
-  .header-content {
-    padding: 0 16px;
+  .fixetta-header {
+    padding: 16px 32px;
   }
-}
-
-/* Focus states for accessibility */
-.neo-btn:focus-visible,
-.brand:focus-visible {
-  outline: 2px solid var(--primary, #6366f1);
-  outline-offset: 2px;
 }
 
 /* Reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
-  .neo-btn,
-  .brand {
+  .header-brand,
+  .header-back-btn,
+  .header-icon-btn {
     transition: none;
+  }
+}
+
+/* ===========================
+   Dropdown Menu Styles
+   =========================== */
+
+.header-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 240px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06);
+  padding: 8px;
+  z-index: 200;
+  animation: dropdownFadeIn 0.2s ease forwards;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  color: #1e293b;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.header-dropdown-item:hover {
+  background-color: #f1f5f9;
+}
+
+.header-dropdown-item:active {
+  background-color: #e2e8f0;
+  transform: scale(0.98);
+}
+
+.header-dropdown-item--cta {
+  background: linear-gradient(135deg, #6366f1, #7c3aed);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+}
+
+.header-dropdown-item--cta:hover {
+  background: linear-gradient(135deg, #4f46e5, #6d28d9);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.35);
+}
+
+.header-dropdown-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 4px 8px;
+}
+
+/* Focus states for accessibility */
+.header-dropdown-item:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: -2px;
+}
+
+.header-dropdown-item--cta:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+  .header-dropdown {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    border-radius: 20px 20px 0 0;
+    padding: 16px;
+    animation: slideUpMobile 0.25s ease forwards;
+  }
+
+  @keyframes slideUpMobile {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }

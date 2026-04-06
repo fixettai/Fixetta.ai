@@ -1,0 +1,94 @@
+/**
+ * ServiceHub Screen Styles - Clean Minimal Design
+ * Mobile-first, responsive layout
+ */
+
+.service-hub {
+  min-height: 100vh;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+}
+
+.service-hub-content {
+  flex: 1;
+  padding-bottom: 80px; /* Space for sticky button */
+}
+
+/* Form Flow Layout */
+.form-flow {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Submit Error */
+.submit-error {
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #ef4444;
+  background: #fef2f2;
+  border-left: 3px solid #ef4444;
+  margin: 0 16px 12px;
+  border-radius: 0 8px 8px 0;
+}
+
+/* Success Toast */
+.success-toast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f172a;
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 1000;
+  animation: toastSlideIn 0.3s ease, toastFadeOut 0.3s ease 2.7s forwards;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes toastSlideIn {
+  from {
+    transform: translate(-50%, -20px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes toastFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+  }
+}
+
+/* Responsive breakpoints */
+@media (min-width: 768px) {
+  .form-flow {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  .submit-error {
+    max-width: 600px;
+    margin: 0 auto 12px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .service-hub-content {
+    padding-bottom: 100px;
+  }
+}

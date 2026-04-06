@@ -1,54 +1,64 @@
 /**
- * ActionButton Component Styles - Silk Neomorphic Design
- * Mobile-first approach with 44x44px minimum touch targets
+ * ActionButton Component Styles - Clean Minimal Design
+ * Mobile-first, 44x44px minimum touch targets, 12px border radius
  */
+
+.action-button-wrapper {
+  padding: 16px;
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(to top, #f8fafc 80%, rgba(248, 250, 252, 0));
+}
 
 .action-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
-  padding: 14px 26px;
-  background: var(--surface, #e8eaf0);
+  padding: 14px 24px;
+  background: #6366f1;
+  color: #ffffff;
   border: none;
-  border-radius: 14px;
+  border-radius: 12px;
   font-size: 16px;
-  font-weight: 700;
-  color: var(--text-primary, #1e293b);
+  font-weight: 600;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.08), -4px -4px 8px rgba(255, 255, 255, 0.6);
-  min-height: 44px;
+  min-height: 52px;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+}
+
+.action-btn:hover:not(:disabled) {
+  background: #4f46e5;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
 }
 
 .action-btn:active:not(:disabled) {
-  box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.06), inset -3px -3px 6px rgba(255, 255, 255, 0.5);
-  transform: scale(0.98);
+  transform: translateY(0) scale(0.98);
+  background: #4338ca;
 }
 
 .action-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* Primary Variant */
-.action-btn--primary {
-  background: linear-gradient(135deg, var(--primary, #6366f1), var(--accent, #7c3aed));
-  color: white;
-  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
-}
-
-.action-btn--primary:active:not(:disabled) {
-  box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.2), inset -3px -3px 6px rgba(255, 255, 255, 0.1);
-}
-
 /* Loading State */
-.action-btn--loading {
+.action-btn.loading {
   cursor: wait;
+  background: #94a3b8;
+  box-shadow: 0 4px 12px rgba(148, 163, 184, 0.25);
 }
 
-.action-btn__spinner {
+.action-btn.loading:hover {
+  background: #94a3b8;
+  transform: none;
+}
+
+.btn-spinner {
   display: inline-flex;
   animation: spin 1s linear infinite;
 }
@@ -62,26 +72,23 @@
   }
 }
 
-/* Icon */
-.action-btn__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  line-height: 1;
-}
-
 /* Responsive breakpoints */
 @media (min-width: 768px) {
   .action-btn {
-    width: auto;
-    padding: 14px 32px;
+    max-width: 400px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .action-button-wrapper {
+    max-width: 600px;
+    margin: 0 auto;
   }
 }
 
 /* Focus states for accessibility */
 .action-btn:focus-visible {
-  outline: 2px solid var(--primary, #6366f1);
+  outline: 2px solid #6366f1;
   outline-offset: 2px;
 }
 
@@ -90,8 +97,10 @@
   .action-btn {
     transition: none;
   }
-  
-  .action-btn__spinner {
-    animation-duration: 2s;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .btn-spinner {
+    animation-duration: 1s;
   }
 }
