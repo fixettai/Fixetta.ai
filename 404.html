@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="refresh" content="0;url=/" />
+  <title>Redirecting...</title>
+  <script>
+    // Single Page App routing for GitHub Pages
+    const segment = 1;
+    const path = window.location.pathname;
+    const repo = location.pathname.split('/')[segment];
+    const url = location.origin + '/' + repo + '?p=' + path;
+    window.location.href = url;
+  </script>
+  <meta http-equiv="refresh" content="0;url=." />
+  <noscript>
+    <meta http-equiv="refresh" content="0;url=/" />
+  </noscript>
+</head>
+<body>
+  <p>Redirecting to Fixetta...</p>
+</body>
+</html>
