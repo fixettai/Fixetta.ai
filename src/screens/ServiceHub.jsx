@@ -4,6 +4,7 @@ import AIHero from '../components/AIHero';
 import ScopeInputs from '../components/ScopeInputs';
 import ActionButton from '../components/ActionButton';
 import LandingContent from '../components/LandingContent';
+import AIEstimator from '../components/AIEstimator';
 import HowToUse from '../components/HowToUse';
 import AboutUs from '../components/AboutUs';
 import ContactUs from '../components/ContactUs';
@@ -15,7 +16,7 @@ import './ServiceHub.css';
  * Clean, minimal design with mobile-first responsive layout
  */
 export default function ServiceHub() {
-  const [activeSection, setActiveSection] = useState('home'); // 'home' | 'form' | 'how-to-use' | 'about' | 'contact'
+  const [activeSection, setActiveSection] = useState('home'); // 'home' | 'form' | 'estimator' | 'how-to-use' | 'about' | 'contact'
   const [formData, setFormData] = useState({
     description: '',
     category: '',
@@ -28,9 +29,14 @@ export default function ServiceHub() {
   const [errors, setErrors] = useState({});
   const [submitResult, setSubmitResult] = useState(null);
 
-  // Handle starting an estimate from landing content
+  // Handle starting a text-based estimate
   const handleStartEstimate = useCallback(() => {
     setActiveSection('form');
+  }, []);
+
+  // Handle starting an AI photo-based estimate
+  const handleStartAIEstimate = useCallback(() => {
+    setActiveSection('estimator');
   }, []);
 
   // Handle hero CTA click - transition to form
@@ -110,6 +116,8 @@ export default function ServiceHub() {
   // Render the appropriate section based on activeSection state
   const renderSection = () => {
     switch (activeSection) {
+      case 'estimator':
+        return <AIEstimator onBack={() => setActiveSection('home')} />;
       case 'how-to-use':
         return <HowToUse />;
       case 'about':
@@ -148,7 +156,7 @@ export default function ServiceHub() {
         return (
           <>
             <AIHero onCtaClick={handleHeroCta} />
-            <LandingContent onStartEstimate={handleStartEstimate} />
+            <LandingContent onStartEstimate={handleStartEstimate} onStartAIEstimate={handleStartAIEstimate} />
           </>
         );
     }

@@ -6,7 +6,7 @@ import landingImage from '../../assets/Landing page header.jpg';
  * LandingContent Component - Secondary containers on the main landing page
  * Displays workflow containers, trust indicators, and the hero image
  */
-export default function LandingContent({ onStartEstimate }) {
+export default function LandingContent({ onStartEstimate, onStartAIEstimate }) {
   const workflowSteps = [
     {
       icon: (
@@ -109,13 +109,24 @@ export default function LandingContent({ onStartEstimate }) {
             <div className="image-text">
               <h2>Transform Your Space</h2>
               <p>AI-powered estimates. Trusted contractors. One platform.</p>
-              <button className="image-cta-btn" onClick={onStartEstimate}>
-                Get Started Now
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                  <polyline points="12 5 19 12 12 19"/>
-                </svg>
-              </button>
+              <div className="image-cta-group">
+                <button className="image-cta-btn" onClick={onStartEstimate}>
+                  Get Started Now
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                    <polyline points="12 5 19 12 12 19"/>
+                  </svg>
+                </button>
+                {onStartAIEstimate && (
+                  <button className="image-cta-btn image-cta-secondary" onClick={onStartAIEstimate}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                      <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                    AI Photo Estimate
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

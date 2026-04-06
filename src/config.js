@@ -11,6 +11,12 @@ export const API_CONFIG = {
   TIMEOUT_MS: 30000,
 };
 
+// OpenRouter Model IDs (kept in sync with EstimatorService.ts)
+export const MODEL_CONFIG = {
+  VISION_MODEL: 'google/gemini-3.1-flash-lite-preview',
+  SCOPING_MODEL: 'anthropic/claude-3.5-sonnet',
+};
+
 // API Endpoints
 export const ENDPOINTS = {
   ANALYZE: `${API_CONFIG.BASE_URL}/api/v1/analyze`,
