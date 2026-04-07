@@ -168,3 +168,121 @@ textarea.form-input {
     transition: none;
   }
 }
+
+/* ── ZIP Code Validation Field Styles ─────────────────────────────────────── */
+
+.zip-code-field {
+  margin-bottom: 20px;
+}
+
+.zip-label {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 10px;
+}
+
+.validation-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.validation-badge.valid {
+  color: #065f46;
+  background: #d1fae5;
+}
+
+.validation-badge.loading {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #fbbf24;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.zip-input {
+  width: 100%;
+  min-height: 44px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 15px;
+  color: #0f172a;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  -webkit-appearance: none;
+}
+
+.zip-input::placeholder {
+  color: #94a3b8;
+}
+
+.zip-input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.zip-input.error {
+  border-color: #ef4444;
+}
+
+.zip-input.error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.zip-input.valid {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.zip-input.valid:focus {
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.error-message {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #ef4444;
+  line-height: 1.4;
+}
+
+.regional-cost-info {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.regional-cost-info span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #f1f5f9;
+  border-radius: 6px;
+}

@@ -1,0 +1,18 @@
+# Fixetta.ai Backend Dependencies
+# Install with: pip install -r backend/requirements.txt
+
+# Core web framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# HTTP client for API calls
+httpx>=0.25.0
+
+# Environment variable loading
+python-dotenv>=1.0.0
+
+# Data validation
+pydantic>=2.0.0
+
+# CORS support (included with fastapi)
+# python-multipart>=0.0.6  # Uncomment if file uploads are needed

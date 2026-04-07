@@ -1,0 +1,72 @@
+{
+  "industry": "Home Improvement",
+  "version": "1.1",
+  "last_updated": "2026-04-07",
+  "rebuttals": [
+    {
+      "id": "price_too_high",
+      "objection_type": "Price / Budget",
+      "strategy": "Empathize with the sticker shock, then pivot to the 'invisible' quality and safety gap.",
+      "scripts": [
+        "I totally get that the number looks high at first glance, I really do. Usually, when there's a big gap in quotes, it's because we're including things like the full warranty and licensed crews that some other guys might skip to keep the price down. Does it make sense to invest a bit more now so you aren't paying for the same repair again in two years?",
+        "I hear you. It's a big investment. The reason we're at that price point is honestly just down to the materials and the fact that we handle all the permits and insurance ourselves so you don't have to worry about a thing. Is a guaranteed, final price something that's a priority for you?"
+      ]
+    },
+    {
+      "id": "need_other_bids",
+      "objection_type": "Comparison Shopping",
+      "strategy": "Validate their due diligence but highlight the risk of losing their spot in the schedule.",
+      "scripts": [
+        "That makes total sense, I'd probably do the same thing if I were in your shoes. Just out of curiosity, what are the main things you're looking for in those other quotes? If I can show you that we've already got those bases covered, maybe we can get you on the schedule before our summer slots fill up.",
+        "I respect that. Most homeowners like to see a few options. Just keep in mind that material costs around here have been jumping around lately. If we can lock this in today, I can guarantee this price for you regardless of what the suppliers do next month. Would that make the decision a little easier?"
+      ]
+    },
+    {
+      "id": "spouse_not_present",
+      "objection_type": "Decision Maker",
+      "strategy": "Treat the spouse as a partner, not a hurdle. Offer a 'bridge' for the conversation.",
+      "scripts": [
+        "Of course, you definitely want to be on the same page for something this big. If your spouse were standing here right now and they loved the plan and the price, do you think they'd have any other concerns we haven't talked about yet?",
+        "No problem at all. Tell you what, I'll send over the 3D rendering and the full breakdown now so you guys can look at it together tonight. Would it be helpful if I hopped on a quick 5-minute call tomorrow evening just to answer any technical questions they might have?"
+      ]
+    },
+    {
+      "id": "think_about_it",
+      "objection_type": "Timing / Procrastination",
+      "strategy": "Gently push for the 'real' reason behind the hesitation without being aggressive.",
+      "scripts": [
+        "I hear you. Usually when people want to take some time, it's because I haven't quite explained something clearly enough. Is it the price, the timeline, or are you just not sure if we're the right fit for the house?",
+        "That's fair. Just so I'm not bugging you later, where would you say we are on a scale of 1 to 10? If we're at an 8, what's that last little bit we're missing to get to a 10?"
+      ]
+    },
+    {
+      "id": "none",
+      "objection_type": "None / General Question",
+      "strategy": "Answer the question directly, provide value, maintain helpful tone, and gently nudge toward the next step",
+      "scripts": [
+        "That's a great question! Let me break it down for you. The best next step is to go ahead and submit your details so our pros can give you an accurate quote.",
+        "I can definitely help with that. Once you submit your inquiry, our AI analyzes it and matches you with the right pros in your area.",
+        "Great question. Let's keep going — we're almost there. Just a few more details and we'll have everything we need to get you matched.",
+        "Happy to help! Our process is pretty simple: submit your details, get an AI-powered estimate, pick the pro you like, and we handle the rest."
+      ]
+    },
+    {
+      "id": "insurance_check",
+      "objection_type": "Insurance / Financing",
+      "strategy": "Position as an expert advocate who handles the heavy lifting with adjusters to ensure nothing is missed.",
+      "scripts": [
+        "I totally understand—waiting on the insurance company can be a real headache. To be honest, adjusters sometimes miss the specific local building codes that we have to follow for things like roofing. Would you like us to meet your adjuster on-site? We can do the walkthrough with them to make sure they're seeing the full scope of the damage right from the start.",
+        "That makes sense. While we're waiting for them to do their thing, did you know we actually offer 0% financing for the first year? That way, you can get the repairs moving now before the next storm hits, and you can just pay yourself back once that insurance check finally arrives. Does that sound like it might take some of the pressure off?"
+      ]
+    },
+    {
+      "id": "appointment_ready",
+      "objection_type": "Closing / Commitment",
+      "strategy": "Cement the win, build excitement, and move immediately to logistics.",
+      "scripts": [
+        "That's awesome! Honestly, I think you're going to be really happy once we get this off your plate. I'm going to pass your project details over to our lead contractor right now so they can grab a spot on the calendar. What's the best phone number for them to reach you at to finalize the time?",
+        "Perfect, let's get this moving for you. I've locked in your estimate details. To make things easy, I'll have our scheduling team send over a quick text with a few available windows for this week. Does that work for you, or do you have a specific day in mind already?"
+      ]
+    }
+  ]
+}

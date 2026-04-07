@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './AIChat.css';
+import { ENDPOINTS } from '../config';
 
 /**
  * AIChat Component - Contextual AI sales chat for the estimator flow
@@ -10,7 +11,7 @@ import './AIChat.css';
  * - Constraint: Sales-first persona - always pivot back to completing submission
  * - State: Can pull data from user's uploaded photos for real-time feedback
  */
-export default function AIChat({ photos = [], formData = {}, onSubmit }) {
+export default function AIChat({ photos = [], formData = {}, onSubmit, photoAnalysis = null }) {
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -24,22 +25,25 @@ export default function AIChat({ photos = [], formData = {}, onSubmit }) {
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
 
-  // System prompt for the AI
-  const SYSTEM_PROMPT = `You are a sales representative for Fixetta, an AI-powered home repair estimator. Your goal is to help users get an accurate estimate and book a professional.
+  // ── Session Context (Project Snapshot) ─────────────────────────────────────
+  // This is the "Stateless Context Bridge" - a small JSON block that travels
+  // with every API call so Claude "remembers" the project state.
+  const [sessionContext, setSessionContext] = useState(null);
 
-Knowledge Base:
-- Current labor rates: $75-$125 per hour
-- Material costs vary depending on the project
-- Fixetta provides a 30-day satisfaction guarantee
-- Users can upload up to 4 photos for AI analysis
-
-Instructions:
-- Answer technical questions about the repair process
-- If the user has uploaded photos, reference what you can see and provide helpful suggestions
-- Always pivot back to completing the submission and getting an estimate
-- Maintain a friendly, helpful, but sales-oriented persona
-- Keep responses concise and action-oriented
-- Encourage users to submit their inquiry for a formal estimate`;
+  // Build session context from photo analysis results when available
+  useEffect(() => {
+    if (photoAnalysis && !sessionContext) {
+      // Build Project Snapshot Object (The Bridge)
+      const snapshot = {
+        status: "photos_uploaded",
+        summary: photoAnalysis.summary || `${photos.length} photos uploaded for analysis`,
+        estimate_total: photoAnalysis.estimated_cost || null,
+        lead_contractor: photoAnalysis.lead_contractor || null,
+        last_action: "User is chatting with AI assistant"
+      };
+      setSessionContext(snapshot);
+    }
+  }, [photoAnalysis, photos.length, sessionContext]);
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
@@ -62,25 +66,48 @@ Instructions:
     setIsLoading(true);
 
     try {
-      // Build context from uploaded photos
-      const photoContext = photos.length > 0 
-        ? `\n\nUser has uploaded ${photos.length} photo(s) for analysis.` 
-        : '';
-      
-      // Simulate AI response (replace with actual API call when backend is ready)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Generate contextual response based on user input and photo context
-      const response = generateAIResponse(input.trim(), photoContext, SYSTEM_PROMPT);
+      // Build context_summary for the Stateless Context Bridge
+      const contextSummary = sessionContext ? 
+        JSON.stringify(sessionContext) : 
+        null;
+
+      // Call the actual backend API
+      const response = await fetch(ENDPOINTS.CHAT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [...messages, userMessage],
+          user_message: input.trim(),
+          photos_count: photos.length,
+          session_id: 'session_' + (formData?.zip || 'anonymous'),
+          context_summary: contextSummary
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
       
       const aiMessage = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: response,
+        content: data.response,
         timestamp: new Date().toISOString()
       };
 
       setMessages(prev => [...prev, aiMessage]);
+
+      // Update session context with last action
+      if (sessionContext) {
+        setSessionContext(prev => ({
+          ...prev,
+          last_action: "User chatted: " + input.trim().slice(0, 50)
+        }));
+      }
     } catch (error) {
       console.error('[AIChat] Failed to get response:', error);
       setMessages(prev => [...prev, {
@@ -92,7 +119,7 @@ Instructions:
     } finally {
       setIsLoading(false);
     }
-  }, [input, photos]);
+  }, [input, photos, messages, sessionContext, formData]);
 
   // Handle form submission from chat
   const handleSubmitInquiry = useCallback(() => {

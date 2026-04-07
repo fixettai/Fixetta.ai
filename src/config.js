@@ -20,10 +20,13 @@ export const MODEL_CONFIG = {
 // API Endpoints
 export const ENDPOINTS = {
   ANALYZE: `${API_CONFIG.BASE_URL}/api/v1/analyze`,
+  CHAT: `${API_CONFIG.BASE_URL}/api/v1/chat`,
   ESTIMATE: `${API_CONFIG.BASE_URL}/api/v1/estimate`,
   PROS: `${API_CONFIG.BASE_URL}/api/v1/pros`,
   BOOKING: `${API_CONFIG.BASE_URL}/api/v1/booking`,
   WEBHOOK: `${API_CONFIG.BASE_URL}/api/v1/webhook`,
+  REGIONAL_COSTS: `${API_CONFIG.BASE_URL}/api/v1/regional-costs`,
+  COST_TOOL_SCHEMA: `${API_CONFIG.BASE_URL}/api/v1/cost-tool-schema`,
 };
 
 // App Configuration

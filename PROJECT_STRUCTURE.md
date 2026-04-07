@@ -2,11 +2,13 @@
 
 ## Overview
 
-**Fixetta** is an AI-powered Home Repair Estimator web app. Users can capture/upload photos of home repair issues, get AI-driven cost estimates, and book local professionals. The app uses **vanilla React via Import Maps** — no bundler or build step required.
+**Fixetta** is an AI-powered Home Repair Estimator web app. Users can capture/upload photos of home repair issues, get AI-driven cost estimates, and book local professionals. The app uses **vanilla React via Vite** with a **FastAPI backend** for AI chat with intent classification and rebuttal injection.
 
-**Tech Stack:** React 18 (ESM/Import Maps), CSS3 (Variables, Flexbox, Grid), Vanilla JS (ES Modules)
+**Tech Stack:** React 18 (Vite, TypeScript), CSS3 (Tailwind), FastAPI (Python), httpx
 
-**Entry Point:** `index.html` → `src/index.js` → `src/App.js`
+**Entry Points:** 
+- Frontend: `index.html` → `src/index.jsx` → `src/App.jsx`
+- Backend: `backend/main.py` (uvicorn)
 
 ---
 
@@ -14,45 +16,40 @@
 
 ```
 /
-├── index.html                     # Main HTML entry with Import Map for React
-├── README.md                      # Project documentation & setup instructions
-├── PROJECT_STRUCTURE.md           # This file
-├── repomix-output.xml             # Repomix export (archive of codebase)
+├── index.html                     # Main HTML entry point (Vite)
+├── vite.config.js                 # Vite configuration
+├── tailwind.config.js             # Tailwind CSS configuration
+├── package.json                   # Frontend dependencies
+│
+├── data/                          # 🗄️ Data Layer
+│   ├── rebuttals.json             # 💬 Sales rebuttal strategies & scripts (NEW)
+│   └── mockData.js                # AI analyses, zip rates, pro listings
+│
+├── backend/                       # 🐍 FastAPI Backend (NEW)
+│   ├── __init__.py                # Package init
+│   ├── main.py                    # 🚀 FastAPI app with chat endpoint
+│   ├── requirements.txt           # Python dependencies
+│   ├── .env.example               # Backend environment vars template
+│   │
+│   └── services/                  # Business logic
+│       ├── __init__.py
+│       ├── intent_classifier.py   # Gemini-based intent classification
+│       └── rebuttal_service.py    # Rebuttal strategy retrieval
 │
 └── src/
-    ├── App.js                     # ⚙️ MAIN APP - State management, screen routing, bottom nav
-    ├── App.tsx                    # 🔴 DEAD FILE - Empty placeholder (not used)
-    ├── App.css                    # 🎨 GLOBAL STYLES - CSS variables, resets, components
-    ├── index.js                   # 🚀 React DOM mount (mounts #app in index.html)
-    ├── index.tsx                  # 🔴 DEAD FILE - Unused TypeScript entry (not used)
+    ├── index.jsx                  # React entry point
+    ├── App.jsx                    # Main app with routing
+    ├── config.js                  # API endpoints & config constants
     │
     ├── components/                # 🧩 Reusable UI Components
-    │   ├── AIResultScreen.js      # Result display: cost estimate, pro matching, booking
-    │   ├── AIResultScreen.css     # Styles for result screen
-    │   ├── AnalysisLoading.js     # Animated loading screen during AI "analysis"
-    │   ├── AnalysisLoading.css    # Styles for loading screen
-    │   ├── BoundingOverlay.js     # Bounding box overlay for AI vision visualization
-    │   ├── BoundingOverlay.css    # Styles for bounding boxes
-    │   ├── GuidedPrompts.js       # Multi-step question flow for detail refinement
-    │   ├── GuidedPrompts.css      # Styles for guided prompts
-    │   ├── MultiPhotoCapture.js   # Photo capture/upload UI (up to 4 photos)
-    │   ├── MultiPhotoCapture.css  # Styles for photo capture
-    │   ├── VitalsVault.js         # Homeowner profile form (home specs)
-    │   └── VitalsVault.css        # Styles for vitals vault
+    │   ├── AIChat.jsx/.css        # AI sales chat with rebuttal integration
+    │   ├── AIHero.jsx             # Hero section with AI estimator
+    │   ├── ScopeInputs.jsx        # Project scope input forms
+    │   └── ...                    # Other components
     │
-    ├── screens/                   # 📱 Full-page Screen Views
-    │   ├── HomeScreen.js          # Landing page: hero, services, featured pros
-    │   ├── ProsScreen.js          # Pro listing with map, filters, booking
-    │   ├── ProjectsScreen.js      # User's project history & status
-    │   └── ProfileScreen.js       # User profile, settings, toggles
-    │
-    ├── data/                      # 🗄️ Mock Data Layer
-    │   └── mockData.js            # AI analyses, zip rates, pro listings, service tiles, vitals defaults
-    │
-    └── utils/                     # 🔧 Utilities
-        ├── aiPipeline.js          # AI helper functions: category guessing, bounding boxes, pro matching
-        ├── persistence.js         # ✅ ACTIVE - localStorage wrapper for client-side state
-        └── persistence.ts         # 🔴 DEAD FILE - Uses unavailable `window.persistentStorage`
+    └── services/                  # 🔧 Frontend services
+        ├── EstimatorService.ts    # Multi-model AI pipeline (Gemini + Claude)
+        └── index.ts
 ```
 
 ---
