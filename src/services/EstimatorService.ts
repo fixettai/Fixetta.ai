@@ -89,7 +89,9 @@ const getApiKey = (): string => {
   const key =
     import.meta.env.VITE_OPENROUTER_API_KEY ?? import.meta.env.OPENROUTER_API_KEY;
   if (!key) {
-    console.warn("[EstimatorService] OPENROUTER_API_KEY not set – using placeholder");
+    if (import.meta.env.DEV) {
+      console.warn("[EstimatorService] OPENROUTER_API_KEY not set – using placeholder");
+    }
     return "sk-or-placeholder";
   }
   return key;
@@ -305,8 +307,10 @@ const parseJsonResponse = <T>(text: string): T | null => {
 
     return JSON.parse(cleaned) as T;
   } catch (e) {
-    console.warn("[EstimatorService] Failed to parse JSON response:", text.slice(0, 300));
-    console.warn("[EstimatorService] Parse error:", e);
+    if (import.meta.env.DEV) {
+      console.warn("[EstimatorService] Failed to parse JSON response:", text.slice(0, 300));
+      console.warn("[EstimatorService] Parse error:", e);
+    }
     return null;
   }
 };
@@ -327,7 +331,7 @@ const callOpenRouter = async (params: {
   const { model, messages, temperature = 0.3, max_tokens = 2048, response_format } = params;
 
   const sanitizedMessages = messages.slice(0, 2);
-  if (sanitizedMessages.length !== messages.length) {
+  if (sanitizedMessages.length !== messages.length && import.meta.env.DEV) {
     console.warn("[EstimatorService] Truncated message array to enforce zero-history mode");
   }
 
@@ -363,11 +367,13 @@ const callOpenRouter = async (params: {
   const data = await res.json();
 
   const usage = data.usage || {};
-  console.log(`[EstimatorService] Token Usage [${model}]:`, {
-    prompt_tokens: usage.prompt_tokens || 0,
-    completion_tokens: usage.completion_tokens || 0,
-    total_tokens: usage.total_tokens || 0,
-  });
+  if (import.meta.env.DEV) {
+    console.log(`[EstimatorService] Token Usage:`, {
+      prompt_tokens: usage.prompt_tokens || 0,
+      completion_tokens: usage.completion_tokens || 0,
+      total_tokens: usage.total_tokens || 0,
+    });
+  }
 
   const content = data.choices?.[0]?.message?.content ?? "";
   return content.trim();
@@ -414,11 +420,14 @@ const retryWithBackoff = async <T>(
       return result;
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      console.warn(`[EstimatorService] Attempt ${attempt + 1} failed: ${lastError.message}`);
+      if (import.meta.env.DEV) {
+        console.warn(`[EstimatorService] Attempt ${attempt + 1} failed: ${lastError.message}`);
+        const delay = baseDelay * Math.pow(2, attempt);
+        console.log(`[EstimatorService] Retrying in ${delay}ms...`);
+      }
 
       if (attempt < maxRetries - 1) {
         const delay = baseDelay * Math.pow(2, attempt);
-        console.log(`[EstimatorService] Retrying in ${delay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
@@ -471,7 +480,7 @@ Return ONLY the JSON.`;
 
   const parsed = parseJsonResponse<GeminiVisionResponse>(raw);
   if (!parsed) {
-    throw new Error("Gemini returned non-parseable response");
+    throw new Error("Failed to analyze image. Please try again.");
   }
 
   return parsed;
@@ -592,7 +601,9 @@ ${sanitizedNote ? `\nAdditional user note: ${sanitizedNote}` : ""}
 TASK: Generate a visual pricing breakdown with repair zones mapped to the image. Provide normalized coordinates (0-100) for each zone so the frontend can place numbered hotspots on the photo.`;
 
   const modelId = "anthropic/claude-sonnet-4.6";
-  console.log("[Estimator] Handing off to Claude:", modelId, "| Items:", detectedItemsStr);
+  if (import.meta.env.DEV) {
+    console.log("[Estimator] Running pricing stage | Items:", detectedItemsStr);
+  }
 
   const raw = await callOpenRouterWithSchema({
     model: modelId,
@@ -606,7 +617,7 @@ TASK: Generate a visual pricing breakdown with repair zones mapped to the image.
 
   const parsed = parseJsonResponse<EstimatorResult>(raw);
   if (!parsed) {
-    throw new Error("Claude returned non-parseable response");
+    throw new Error("Failed to generate estimate. Please try again.");
   }
 
   // Ensure consistency

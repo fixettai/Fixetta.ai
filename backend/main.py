@@ -22,6 +22,7 @@ from pydantic import BaseModel, Field
 from backend.services.intent_classifier import classify_intent, IntentClassificationResult
 from backend.services.rebuttal_service import get_rebuttal_context
 from backend.services.cost_data import fetch_regional_rates, COST_LOOKUP_TOOL_SCHEMA
+from backend.services.triage_service import analyze_multiple_images, TriageResult
 
 
 # ── Pydantic Models ──────────────────────────────────────────────────────────
@@ -32,6 +33,12 @@ class ChatMessage(BaseModel):
     content: str
 
 
+class ImageData(BaseModel):
+    """Base64 encoded image data for triage analysis"""
+    base64: str = Field(..., description="Base64 encoded image data")
+    mime_type: str = Field(default="image/jpeg", description="MIME type of the image")
+
+
 class ChatRequest(BaseModel):
     """Request body for the chat endpoint"""
     messages: List[ChatMessage] = Field(..., description="Chat history")
@@ -39,6 +46,7 @@ class ChatRequest(BaseModel):
     photos_count: int = Field(default=0, description="Number of photos uploaded")
     session_id: Optional[str] = Field(default=None, description="Session identifier for rate limiting")
     context_summary: Optional[str] = Field(default=None, description="Project snapshot/context summary for context bridge")
+    images: Optional[List[ImageData]] = Field(default=None, description="Base64 encoded images for triage analysis")
 
 
 class ChatResponse(BaseModel):
@@ -340,14 +348,15 @@ async def health_check():
 @app.post("/api/v1/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
     """
-    Main chat endpoint with intent classification and rebuttal injection.
+    Main chat endpoint with intent classification, rebuttal injection, and triage analysis.
     
     Flow:
     1. User message comes in
-    2. Gemini 3.1 Flash Lite classifies the intent (~200ms)
-    3. FastAPI fetches matching strategy from rebuttals.json
-    4. Claude 4.6 receives the chat history + Sales Directive
-    5. Claude generates a humanized, sales-optimized response
+    2. If images are provided, Gemini 3.0 Flash performs triage analysis
+    3. Gemini 3.1 Flash Lite classifies the intent (~200ms)
+    4. FastAPI fetches matching strategy from rebuttals.json
+    5. Claude 4.6 receives the chat history + Sales Directive + Triage Results
+    6. Claude generates a humanized, sales-optimized response
     """
     # Rate limiting
     session_id = request.session_id or "anonymous"
@@ -358,6 +367,18 @@ async def chat_endpoint(request: ChatRequest):
         )
     
     user_message = request.user_message
+    
+    # Step 0: Triage Analysis (if images are provided and not already analyzed)
+    triage_result: Optional[TriageResult] = None
+    if request.images and len(request.images) > 0:
+        print(f"[ChatEndpoint] Running triage analysis on {len(request.images)} image(s)...")
+        image_base64_list = [img.base64 for img in request.images]
+        mime_types = [img.mime_type for img in request.images]
+        triage_result = await analyze_multiple_images(image_base64_list, mime_types)
+        if triage_result.success:
+            print(f"[ChatEndpoint] Triage complete: {triage_result.material} - {triage_result.severity}")
+        else:
+            print(f"[ChatEndpoint] Triage failed: {triage_result.raw_response}")
     
     # Step 1: Classify user intent using Gemini (fast & cheap)
     intent_result = await classify_intent(user_message)
@@ -375,12 +396,25 @@ async def chat_endpoint(request: ChatRequest):
         print(f"[ChatEndpoint] APPOINTMENT READY! Triggering team notification...")
         await trigger_notification_for_appointment(context_summary=request.context_summary)
     
-    # Step 3: Get response from Claude with context
+    # Step 3: Enrich context summary with triage results
+    enriched_context = request.context_summary
+    if triage_result and triage_result.success:
+        triage_context = (
+            f"TRIAGE ANALYSIS: Material={triage_result.material}, "
+            f"Extent={triage_result.extent}, Severity={triage_result.severity}, "
+            f"Anomalies={triage_result.anomalies}"
+        )
+        if enriched_context:
+            enriched_context = f"{enriched_context} | {triage_context}"
+        else:
+            enriched_context = triage_context
+    
+    # Step 4: Get response from Claude with context
     claude_response = await call_claude_with_context(
         messages=request.messages,
         sales_directive=sales_directive,
         photos_count=request.photos_count,
-        context_summary=request.context_summary
+        context_summary=enriched_context
     )
     
     return ChatResponse(

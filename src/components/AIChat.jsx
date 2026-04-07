@@ -11,7 +11,7 @@ import { ENDPOINTS } from '../config';
  * - Constraint: Sales-first persona - always pivot back to completing submission
  * - State: Can pull data from user's uploaded photos for real-time feedback
  */
-export default function AIChat({ photos = [], formData = {}, onSubmit, photoAnalysis = null }) {
+export default function AIChat({ photos = [], formData = {}, onSubmit, photoAnalysis = null, triagePerformed = false }) {
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -71,19 +71,41 @@ export default function AIChat({ photos = [], formData = {}, onSubmit, photoAnal
         JSON.stringify(sessionContext) : 
         null;
 
+      // Build request body with optional images for triage
+      const requestBody = {
+        messages: [...messages, userMessage],
+        user_message: input.trim(),
+        photos_count: photos.length,
+        session_id: 'session_' + (formData?.zip || 'anonymous'),
+        context_summary: contextSummary
+      };
+
+      // Only send images if triage hasn't been performed yet
+      if (!triagePerformed && photos.length > 0) {
+        const imagePromises = photos.map(photo => {
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const base64Data = reader.result.split(',')[1]; // Remove data:image/xxx;base64, prefix
+              const mimeType = photo.type || 'image/jpeg';
+              resolve({ base64: base64Data, mime_type: mimeType });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(photo);
+          });
+        });
+        
+        const images = await Promise.all(imagePromises);
+        requestBody.images = images;
+      }
+
       // Call the actual backend API
       const response = await fetch(ENDPOINTS.CHAT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          messages: [...messages, userMessage],
-          user_message: input.trim(),
-          photos_count: photos.length,
-          session_id: 'session_' + (formData?.zip || 'anonymous'),
-          context_summary: contextSummary
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {

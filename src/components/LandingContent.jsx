@@ -1,10 +1,13 @@
 import React from 'react';
 import './LandingContent.css';
 import landingImage from '../../assets/Landing page header.jpg';
+import { APP_CONFIG } from '../config';
 
 /**
  * LandingContent Component - Secondary containers on the main landing page
  * Displays workflow containers, trust indicators, and the hero image
+ * CRITICAL: Maintain all existing SEO metadata and alt attributes.
+ * Ensure Richmond, VA local anchoring in headings and descriptions.
  */
 export default function LandingContent({ onStartEstimate }) {
   const workflowSteps = [
@@ -97,33 +100,33 @@ export default function LandingContent({ onStartEstimate }) {
 
   return (
     <div className="landing-content">
-      {/* Hero Image Section */}
-      <section className="landing-hero-image">
-        <div className="image-wrapper">
-          <img 
-            src={landingImage} 
-            alt="Fixetta AI Home Repair Estimator - Transform your space with confidence" 
-            className="hero-image"
-          />
-          <div className="image-overlay">
-            <div className="image-text">
-              <h2>Transform Your Space</h2>
-              <p>AI-powered estimates. Trusted contractors. One platform.</p>
-            </div>
-          </div>
-        </div>
-      </section>
+       {/* Hero Image Section */}
+       <section className="landing-hero-image">
+         <div className="image-wrapper">
+           <img 
+             src={landingImage} 
+             alt={`Professional home repair estimate in ${APP_CONFIG.DEFAULT_LOCATION} - AI-powered analysis for Richmond homeowners`} 
+             className="hero-image"
+           />
+           <div className="image-overlay">
+             <div className="image-text">
+               <h2>Transform Your Richmond, VA Home</h2>
+               <p>AI-powered estimates. Trusted {APP_CONFIG.DEFAULT_LOCATION} contractors. One platform.</p>
+             </div>
+           </div>
+         </div>
+       </section>
 
-      {/* How It Works Section */}
-      <section className="landing-workflow-section" aria-label="How Fixetta Works">
-        <div className="landing-section-container">
-          <div className="landing-section-header">
-            <span className="landing-section-badge">Simple Process</span>
-            <h2 className="landing-section-title">How Fixetta Works</h2>
-            <p className="landing-section-subtitle">
-              From photo to project completion in four easy steps. No hidden fees, no surprises.
-            </p>
-          </div>
+       {/* How It Works Section */}
+       <section className="landing-workflow-section" aria-label="How Fixetta Works">
+         <div className="landing-section-container">
+           <div className="landing-section-header">
+             <span className="landing-section-badge">Simple Process</span>
+             <h2 className="landing-section-title">How Fixetta Works in {APP_CONFIG.DEFAULT_LOCATION}</h2>
+             <p className="landing-section-subtitle">
+               From photo to project completion in four easy steps. No hidden fees, no surprises for {APP_CONFIG.DEFAULT_LOCATION} homeowners.
+             </p>
+           </div>
 
           <div className="workflow-grid">
             {workflowSteps.map((step) => (
@@ -152,36 +155,34 @@ export default function LandingContent({ onStartEstimate }) {
         </div>
       </section>
 
-      {/* Why Choose Fixetta Section */}
-      <section className="landing-features-section" aria-label="Fixetta Features">
-        <div className="landing-section-container">
-          <div className="landing-section-header">
-            <span className="landing-section-badge">Why Fixetta</span>
-            <h2 className="landing-section-title">Built for Homeowners, Powered by AI</h2>
-            <p className="landing-section-subtitle">
-              We combine cutting-edge artificial intelligence with local expertise to deliver the most accurate repair estimates in the industry.
-            </p>
-          </div>
+       {/* Why Choose Fixetta Section */}
+       <section className="landing-features-section" aria-label="Fixetta Features">
+         <div className="landing-section-container">
+           <div className="landing-section-header">
+             <span className="landing-section-badge">Why Fixetta</span>
+             <h2 className="landing-section-title">Built for {APP_CONFIG.DEFAULT_LOCATION} Homeowners, Powered by AI</h2>
+             <p className="landing-section-subtitle">
+               We combine cutting-edge artificial intelligence with {APP_CONFIG.DEFAULT_LOCATION} local expertise to deliver the most accurate repair estimates in Virginia.
+             </p>
+           </div>
 
-          <div className="features-grid">
-            <div className="feature-card">
-              <h3>Smart AI Analysis</h3>
-              <p>Our advanced AI vision system analyzes your photos to identify repair needs and generates accurate cost estimates in seconds.</p>
-              <p className="feature-placeholder">[Add more details about your AI technology, accuracy metrics, and capabilities]</p>
-            </div>
-            <div className="feature-card">
-              <h3>Vetted Professionals</h3>
-              <p>Every contractor in our network is thoroughly vetted, licensed, and insured. We match you with the best fit for your specific project.</p>
-              <p className="feature-placeholder">[Add information about contractor vetting process, insurance coverage, and quality standards]</p>
-            </div>
-            <div className="feature-card">
-              <h3>Transparent Pricing</h3>
-              <p>No hidden fees, no surprises. Get detailed cost breakdowns including materials, labor, and timeline before committing to any work.</p>
-              <p className="feature-placeholder">[Add details about pricing methodology, what's included in estimates, and guarantees]</p>
-            </div>
-          </div>
-        </div>
-      </section>
+             <div className="features-grid">
+               <div className="feature-card">
+                 <h3>Smart AI Analysis</h3>
+                 <p className="feature-badge">Data Verification</p>
+                 <p>AI cost estimates backed by Craftsman National Estimator data. Get accurate, regionalized pricing for labor and materials in {APP_CONFIG.DEFAULT_LOCATION}.</p>
+               </div>
+               <div className="feature-card">
+                 <h3>Unmatched Quality</h3>
+                 <p>Guaranteed Unmatched Quality. Our AI-driven vetting process ensures only top-tier, verified {APP_CONFIG.DEFAULT_LOCATION} contractors handle your Richmond home.</p>
+               </div>
+               <div className="feature-card">
+                 <h3>Fair Price Guarantee</h3>
+                 <p>Real-Time Pricing Guarantee. Every quote is cross-referenced with Richmond, VA market rates to ensure you never overpay for premium service.</p>
+               </div>
+             </div>
+         </div>
+       </section>
     </div>
   );
 }

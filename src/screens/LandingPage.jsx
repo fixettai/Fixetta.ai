@@ -1,5 +1,12 @@
 import React from 'react';
+import { APP_CONFIG } from '../config';
 
+/**
+ * LandingPage Component - Alternative landing page for contractor-facing audience
+ * CRITICAL: Maintain all existing SEO metadata, Schema.org scripts, and header
+ * hierarchies. Do not strip <meta> tags or alt attributes during this refactor.
+ * Ensure all new routes follow the /services/[service-name] structure.
+ */
 export default function LandingPage() {
   return (
     <div className="bg-background text-on-surface antialiased">
@@ -8,7 +15,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto w-full flex justify-between items-center">
           <div className="flex items-center gap-3">
             <img 
-              alt="Fixetta Logo" 
+              alt="Fixetta home repair platform logo serving Richmond, VA" 
               className="w-8 h-8 rounded-lg neomorph-raised object-contain bg-white p-1" 
               src="https://lh3.googleusercontent.com/aida/ADBb0ugdbSt0SWh2Mu2pFx6jwFeLLaXqycJKW0FLduUIHPefFRD8PTlq8z8pMC-5AbHlfTuMeMNtmSE6hJRYTOlr3rBF382tJSIFiIb1r_CU0vsOWb4CknGCLX87BVOzoqm1Vbzx7SfPlNBGK1eGU4HXufSEb3xzBgPGoqdtAoVBWyWaDG2jCO-pgPbzs_pQFMyrNCj5uTxPg06HTCAgXqQlUe_eSEzvtK96LDUFXomZIdjgY8-jHYnfe0-n4YXeh0GYTaOACb9C_Qo"
             />
@@ -31,14 +38,14 @@ export default function LandingPage() {
         <section className="max-w-7xl mx-auto px-6 py-16 md:py-24 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full neomorph-inset mb-8">
             <span className="material-symbols-outlined text-primary text-sm">construction</span>
-            <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Engineered for Contractors</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Engineered for {APP_CONFIG.DEFAULT_LOCATION} Contractors</span>
           </div>
           <h1 className="text-4xl md:text-7xl font-extrabold text-on-surface tracking-tight leading-[1.1] mb-6">
-            The Construction <br />
-            <span className="text-slate-600">Growth Engine.</span>
+            The {APP_CONFIG.DEFAULT_LOCATION} <br />
+            <span className="text-slate-600">Construction Growth Engine.</span>
           </h1>
           <p className="max-w-2xl mx-auto text-on-surface-variant text-lg md:text-xl leading-relaxed mb-10">
-            Find more profitable work, manage your job sites, and win bids faster with Fixetta's integrated AI tools. Built specifically for the modern construction firm.
+            Find more profitable work, manage your job sites, and win bids faster with Fixetta's integrated AI tools. Built specifically for {APP_CONFIG.DEFAULT_LOCATION} construction firms.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
             <button className="neomorph-raised w-full sm:w-auto px-8 py-4 rounded-2xl bg-background text-primary font-bold text-lg active:scale-95 transition-all flex items-center justify-center gap-2">
@@ -53,7 +60,7 @@ export default function LandingPage() {
           <div className="mt-20 neomorph-raised rounded-[2.5rem] p-4 bg-background">
             <div className="relative rounded-[2rem] overflow-hidden aspect-video shadow-inner bg-slate-200">
               <img 
-                alt="Fixetta Construction CRM Dashboard" 
+                alt={`AI-powered construction management dashboard for Richmond, VA contractors`} 
                 className="w-full h-full object-cover opacity-90" 
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOndf4r8gN8Unki3suyFdfD_2sTCRKur1DZBCpCyKsBTLlkYJYAa3NdYBm8GVGkiIdIMu0SY_ga0dB7hfpgQA5C-J0KXDN-i9Pkw83Z8zEYfh2xUJMlb-U2S14Ky5GbJ5Hf3a9DfwPbY33TFSQHY5t2OI-U1KCe-V6p4q7RL45X_1CJxshsiwPaNMW2XTkwzB2bOapsh3Zd0MD8T0eupsYmvRHbULsEv7r9QQ-F6TywESWFE3OA8c9pJk9j_q6xyknUqomNp4V0A"
               />
@@ -72,7 +79,7 @@ export default function LandingPage() {
                   <span className="material-symbols-outlined text-primary">analytics</span>
                 </div>
                 <h3 className="text-2xl font-bold mb-4">AI-Powered Lead Scoring</h3>
-                <p className="text-on-surface-variant max-w-sm">Stop chasing dead-ends. Our AI analyzes project scope, location, and past margins to identify the most profitable bids for your crew.</p>
+                <p className="text-on-surface-variant max-w-sm">Stop chasing dead-ends. Our AI analyzes project scope, location, and past margins to identify the most profitable bids for your {APP_CONFIG.DEFAULT_LOCATION} crew.</p>
               </div>
               <div className="mt-8 flex justify-end">
                 <div className="w-64 h-40 neomorph-inset rounded-2xl p-6 bg-white/30 backdrop-blur-sm">
@@ -94,7 +101,7 @@ export default function LandingPage() {
                 <span className="material-symbols-outlined text-primary text-3xl">square_foot</span>
               </div>
               <h3 className="text-xl font-bold mb-4">Instant Material & Labor Estimates</h3>
-              <p className="text-on-surface-variant mb-10">Upload site photos or sketches. Fixetta's AI generates itemized material lists and labor hour projections in seconds.</p>
+              <p className="text-on-surface-variant mb-10">Upload site photos or sketches. AI generates itemized material lists and labor hour projections in seconds for {APP_CONFIG.DEFAULT_LOCATION} projects.</p>
               <div className="w-full neomorph-inset rounded-2xl p-6">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-xs font-bold text-outline uppercase tracking-widest">Quote Accuracy</span>
@@ -131,7 +138,7 @@ export default function LandingPage() {
               </div>
               <div className="hidden sm:block w-1/3 aspect-square neomorph-inset rounded-2xl p-4">
                 <img 
-                  alt="Project Blueprint" 
+                  alt={`Construction project blueprint for home repair in ${APP_CONFIG.DEFAULT_LOCATION}`} 
                   className="w-full h-full object-cover rounded-xl opacity-30 mix-blend-multiply" 
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhBIGJLGjDsCOtHRaO5e1zsC44DUsnQyd27vQgCAGbCR71vBC5dDhvx5V0ZRJNWdF8tdN8869ywcvOwR4-r_JFwMyPxmnuy0yrVTWBegJcdA0Mhzd2TX3CKYY1OigGkfRHNlfRShO6ev8-RbW45Ic1GC3UIe627X36f-bpXteu3bu6C_gqThfaSyzb0YrlXg9m7f9cnTVUI2tv7HE-Nh8HT1Y3SQKb3tGsV55Q2JTTvwe3uv5jGhN0B_lJkeEfdSp3wBAi6nLMWg"
                 />
@@ -143,9 +150,9 @@ export default function LandingPage() {
         {/* CTA Section */}
         <section className="max-w-4xl mx-auto px-6 py-20">
           <div className="neomorph-raised rounded-[3rem] p-12 md:p-20 bg-background text-center">
-            <h2 className="text-3xl md:text-5xl font-bold mb-8">Ready to scale your <span className="text-slate-600">firm?</span></h2>
+            <h2 className="text-3xl md:text-5xl font-bold mb-8">Ready to scale your <span className="text-slate-600">Richmond firm?</span></h2>
             <p className="text-on-surface-variant text-lg mb-12 max-w-lg mx-auto">
-              Join hundreds of general contractors and specialists who use Fixetta to win more work.
+              Join hundreds of general contractors and specialists who use Fixetta to win more work in Richmond, VA.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
               <button className="neomorph-raised px-10 py-5 rounded-2xl bg-background text-primary font-bold text-xl active:scale-90 transition-all">
@@ -165,13 +172,13 @@ export default function LandingPage() {
           <div className="flex flex-col items-center md:items-start gap-4">
             <div className="flex items-center gap-2">
               <img 
-                alt="Fixetta Logo small" 
+                alt="Fixetta home improvement platform Richmond, VA" 
                 className="w-6 h-6 object-contain" 
                 src="https://lh3.googleusercontent.com/aida/ADBb0ugdbSt0SWh2Mu2pFx6jwFeLLaXqycJKW0FLduUIHPefFRD8PTlq8z8pMC-5AbHlfTuMeMNtmSE6hJRYTOlr3rBF382tJSIFiIb1r_CU0vsOWb4CknGCLX87BVOzoqm1Vbzx7SfPlNBGK1eGU4HXufSEb3xzBgPGoqdtAoVBWyWaDG2jCO-pgPbzs_pQFMyrNCj5uTxPg06HTCAgXqQlUe_eSEzvtK96LDUFXomZIdjgY8-jHYnfe0-n4YXeh0GYTaOACb9C_Qo"
               />
               <span className="text-lg font-bold text-slate-900 font-headline">Fixetta</span>
             </div>
-            <p className="text-slate-500 text-sm">© 2024 Fixetta Technologies Inc. Built for Construction.</p>
+            <p className="text-slate-500 text-sm">2024 Fixetta Technologies Inc. Serving Richmond, VA.</p>
           </div>
           <div className="flex flex-wrap justify-center gap-8">
             <a className="text-slate-500 hover:text-slate-900 font-bold transition-transform hover:translate-y-[-2px]" href="#product">Product</a>

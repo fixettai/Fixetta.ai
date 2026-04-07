@@ -1,21 +1,31 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import './AIHero.css';
 import { runEstimatorPipeline, generateTextEstimate, getFallbackEstimate } from '../services/EstimatorService';
+import { APP_CONFIG } from '../config';
 
 /**
  * AIHero Component - Clean minimal hero banner for the AI feature
  * Mobile-first, 44x44px minimum touch targets, 12px border radius
  * Clean, minimal aesthetic with no decorative clutter
- * 
+ *
+ * CRITICAL: Maintain all existing SEO metadata, Schema.org scripts, and header
+ * hierarchies. Do not strip <meta> tags or alt attributes during this refactor.
+ * Ensure all images have descriptive alt text with Richmond, VA context.
+ *
  * Now integrates the AI Estimator functionality inline when activated.
  */
-export default function AIHero({ 
-  title = 'Snap the problem.',
-  subtitle = 'Get an instant AI estimate for your home repair.',
+export default function AIHero({
+  title,
+  subtitle,
   ctaText = 'Try Snap AI',
   onEstimateComplete,
   onProceedToBooking
 }) {
+  // SEO defaults with Richmond, VA local anchoring
+  const defaultProps = {
+    title: title || `AI Home Repair Estimate in ${APP_CONFIG.DEFAULT_LOCATION}`,
+    subtitle: subtitle || 'Upload a photo or describe the issue. Get an instant AI-powered cost estimate for your Richmond, VA home.',
+  };
   const [isEstimating, setIsEstimating] = useState(false);
   const [photos, setPhotos] = useState([]);
   const [userNote, setUserNote] = useState('');
@@ -23,6 +33,7 @@ export default function AIHero({
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [activeZone, setActiveZone] = useState(null);
+  const [currentStep, setCurrentStep] = useState(0);
   const fileRef = useRef(null);
 
   const MAX_PHOTOS = 4;
@@ -114,9 +125,30 @@ export default function AIHero({
     setIsEstimating(false);
   }, [photos]);
 
+  // Cycle through analysis steps for a smooth "black box" experience
+  useEffect(() => {
+    if (!isAnalyzing) {
+      setCurrentStep(0);
+      return;
+    }
+
+    const stepsCount = 3;
+    const intervalMs = 2500;
+    const timer = setInterval(() => {
+      setCurrentStep((prev) => (prev < stepsCount - 1 ? prev + 1 : prev));
+    }, intervalMs);
+
+    return () => clearInterval(timer);
+  }, [isAnalyzing]);
+
   // ── Loading State ─────────────────────────────────────────────────────
   if (isAnalyzing) {
-    const hasPhotos = photos.length > 0;
+    const analysisSteps = [
+      'Analyzing your photo...',
+      'Estimating scope of work...',
+      'Estimate ready!',
+    ];
+
     return (
       <section className="ai-hero ai-hero-estimating" aria-label="AI Home Repair Estimator">
         <div className="analyzing-state">
@@ -127,40 +159,26 @@ export default function AIHero({
               <circle cx="12" cy="13" r="4" />
             </svg>
           </div>
-          <h3 className="analyzing-title">{hasPhotos ? 'Analyzing Your Space' : 'Analyzing Your Description'}</h3>
-          <p className="analyzing-subtitle">
-            {hasPhotos
-              ? 'AI is identifying damage zones and generating visual pricing...'
-              : 'AI is generating a visual pricing breakdown...'}
+           <h2 className="analyzing-title analyzing-title-fade">
+             {analysisSteps[currentStep]}
+           </h2>
+           <p className="analyzing-subtitle analyzing-subtitle-fade">
+            {currentStep === 0 && 'Identifying damage and reference points...'}
+            {currentStep === 1 && 'Calculating materials, labor, and regional pricing...'}
+            {currentStep === 2 && 'Finalizing your visual estimate...'}
           </p>
           <div className="analyzing-steps">
-            {hasPhotos ? (
-              <>
-                <div className="step-item active">
-                  <span className="step-dot" />
-                  <span>Visual Analysis (Gemini)</span>
-                </div>
-                <div className="step-item pending">
-                  <span className="step-dot" />
-                  <span>Pricing Breakdown (Claude)</span>
-                </div>
-                <div className="step-item pending">
-                  <span className="step-dot" />
-                  <span>Zone Mapping</span>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="step-item active">
-                  <span className="step-dot" />
-                  <span>Generating Pricing (Claude)</span>
-                </div>
-                <div className="step-item pending">
-                  <span className="step-dot" />
-                  <span>Zone Mapping</span>
-                </div>
-              </>
-            )}
+            {analysisSteps.map((step, index) => (
+              <div
+                key={step}
+                className={`step-item ${
+                  index === currentStep ? 'active' : index < currentStep ? 'complete' : 'pending'
+                }`}
+              >
+                <span className="step-dot" />
+                <span>{step}</span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -175,23 +193,23 @@ export default function AIHero({
 
     return (
       <section className="ai-hero ai-hero-estimating ai-hero-result" aria-label="AI Home Repair Estimator">
-        <div className="result-header">
-          <button className="result-back-btn" onClick={handleNewEstimate} aria-label="Back to hero">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-          <h2 className="result-title">Estimate Complete</h2>
+         <div className="result-header">
+           <button className="result-back-btn" onClick={handleNewEstimate} aria-label="Back to hero">
+             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+               <polyline points="15 18 9 12 15 6" />
+             </svg>
+           </button>
+           <h2 className="result-title">AI Cost Estimate Complete – {APP_CONFIG.DEFAULT_LOCATION}</h2>
           <div className="result-spacer" />
           <span className="result-badge">AI Estimator</span>
         </div>
 
         <div className="result-content">
-          {/* Hero Image with Hotspots */}
-          {primaryPhoto && (
-            <div className="hero-image-container">
-              <div className="hero-image-wrapper">
-                <img src={primaryPhoto} alt="Analyzed area" className="hero-image" />
+           {/* Hero Image with Hotspots */}
+           {primaryPhoto && (
+             <div className="hero-image-container">
+               <div className="hero-image-wrapper">
+                 <img src={primaryPhoto} alt={`AI home repair analysis showing damage zones in ${APP_CONFIG.DEFAULT_LOCATION}`} className="hero-image" />
                 {zones.map((zone) => (
                   <button
                     key={zone.zone_id}
@@ -207,12 +225,12 @@ export default function AIHero({
                 ))}
               </div>
             </div>
-          )}
+           )}
 
-          {/* Total Estimate Summary */}
-          <div className="total-summary-card">
-            <div className="total-summary-header">
-              <h3 className="total-summary-label">{summary?.summary_label || 'Estimate Summary'}</h3>
+           {/* Total Estimate Summary */}
+           <div className="total-summary-card">
+             <div className="total-summary-header">
+               <h3 className="total-summary-label">{summary?.summary_label || `${APP_CONFIG.DEFAULT_LOCATION} Home Repair Estimate`}</h3>
               {summary?.confidence && (
                 <span className={`confidence-badge ${summary.confidence}`}>
                   {summary.confidence.charAt(0).toUpperCase() + summary.confidence.slice(1)} Confidence
@@ -228,10 +246,10 @@ export default function AIHero({
             </div>
           </div>
 
-          {/* Repair Zone Cards */}
-          {zones.length > 0 && (
-            <div className="repair-zones-section">
-              <h3 className="section-title">Repair Zones</h3>
+           {/* Repair Zone Cards */}
+           {zones.length > 0 && (
+             <div className="repair-zones-section">
+               <h2 className="section-title">Detected Repair Zones – {APP_CONFIG.DEFAULT_LOCATION}</h2>
               <div className="zone-cards-container">
                 {zones.map((zone) => (
                   <div
@@ -297,7 +315,7 @@ export default function AIHero({
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
-          <h2 className="estimator-title">AI Photo Estimate</h2>
+          <h2 className="estimator-title">AI Photo Estimate – {APP_CONFIG.DEFAULT_LOCATION}</h2>
           <div className="estimator-spacer" />
           <span className="estimator-badge-inline">Snap AI</span>
         </div>
@@ -309,10 +327,10 @@ export default function AIHero({
 
         {/* Photo Upload Area */}
         <div className="photo-upload-section">
-          <div className="photo-grid">
-            {photos.map((photo, index) => (
-              <div key={index} className="photo-thumbnail">
-                <img src={photo.url} alt={`Upload ${index + 1}`} />
+        <div className="photo-grid">
+          {photos.map((photo, index) => (
+            <div key={index} className="photo-thumbnail">
+              <img src={photo.url} alt={`Home repair photo for AI analysis in ${APP_CONFIG.DEFAULT_LOCATION} - photo ${index + 1}`} />
                 <button
                   className="remove-photo-btn"
                   onClick={() => handleRemovePhoto(index)}
@@ -406,15 +424,15 @@ export default function AIHero({
 
   // ── Default Hero State ────────────────────────────────────────────────
   return (
-    <section className="ai-hero" aria-label="AI Home Repair Estimator">
+    <section className="ai-hero" aria-label={`AI Home Repair Estimator in ${APP_CONFIG.DEFAULT_LOCATION}`}>
       <div className="hero-content">
-        {/* Main heading */}
+        {/* Main heading (H1 - one per page, includes Richmond, VA) */}
         <h1 className="hero-heading">
-          {title}
+          {defaultProps.title}
         </h1>
-        
-        {/* Subtitle */}
-        <p className="hero-subtitle">{subtitle}</p>
+
+        {/* Subtitle with local anchoring */}
+        <p className="hero-subtitle">{defaultProps.subtitle}</p>
         
         {/* CTA Button */}
         <button 
