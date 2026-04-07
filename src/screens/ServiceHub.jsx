@@ -1,8 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import Header from '../components/Header';
 import AIHero from '../components/AIHero';
-import ScopeInputs from '../components/ScopeInputs';
-import ActionButton from '../components/ActionButton';
+import AIChat from '../components/AIChat';
 import LandingContent from '../components/LandingContent';
 import HowToUse from '../components/HowToUse';
 import AboutUs from '../components/AboutUs';
@@ -28,13 +27,12 @@ export default function ServiceHub() {
     phone: '',
     zip: '',
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [photos, setPhotos] = useState([]);
   const [submitResult, setSubmitResult] = useState(null);
 
-  // Handle starting a text-based estimate
+  // Handle starting a text-based estimate - now opens chat
   const handleStartEstimate = useCallback(() => {
-    setActiveSection('form');
+    setActiveSection('chat');
   }, []);
 
   // Handle hero CTA click - the estimator is now handled internally by AIHero
@@ -43,70 +41,34 @@ export default function ServiceHub() {
     // This callback is kept for compatibility but no longer navigates to form
   }, []);
 
-  // Handle form data changes
-  const handleFormChange = useCallback((data) => {
-    setFormData((prev) => ({ ...prev, ...data }));
-  }, []);
-
-  // Handle form errors
-  const handleFormError = useCallback((errs) => {
-    setErrors(errs);
-  }, []);
-
   // Handle submit - package data and send to console.log (placeholder for API)
   const handleSubmit = useCallback(async (payload) => {
-    setIsSubmitting(true);
-    setErrors({});
+    // Log the packaged request object (placeholder for OpenRouter API call)
+    console.log('=== FIXETTA SUBMISSION PAYLOAD ===');
+    console.log(JSON.stringify(payload, null, 2));
+    console.log('==================================');
 
-    try {
-      // Validate required fields before submission
-      if (!payload.scope.description || payload.scope.description.length < 10) {
-        setErrors({ description: 'Please describe the issue in at least 10 characters' });
-        setIsSubmitting(false);
-        return;
-      }
+    setSubmitResult({
+      success: true,
+      message: 'Analysis submitted successfully!',
+      payload,
+      timestamp: new Date().toISOString(),
+    });
 
-      if (!payload.scope.category) {
-        setErrors({ category: 'Please select a service category' });
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Log the packaged request object (placeholder for OpenRouter API call)
-      console.log('=== FIXETTA SUBMISSION PAYLOAD ===');
-      console.log(JSON.stringify(payload, null, 2));
-      console.log('==================================');
-
-      // Simulate API delay for UX
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      setSubmitResult({
-        success: true,
-        message: 'Analysis submitted successfully!',
-        payload,
-        timestamp: new Date().toISOString(),
+    // Reset after showing result
+    setTimeout(() => {
+      setSubmitResult(null);
+      setFormData({
+        description: '',
+        category: '',
+        name: '',
+        email: '',
+        phone: '',
+        zip: '',
       });
-
-      // Reset after showing result
-      setTimeout(() => {
-        setSubmitResult(null);
-        setFormData({
-          description: '',
-          category: '',
-          name: '',
-          email: '',
-          phone: '',
-          zip: '',
-        });
-        setActiveSection('home');
-      }, 3000);
-
-    } catch (error) {
-      setErrors({ submit: 'Submission failed. Please try again.' });
-      console.error('Submission error:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
+      setPhotos([]);
+      setActiveSection('home');
+    }, 3000);
   }, []);
 
   // Handle estimate complete callback from AIHero
@@ -115,8 +77,18 @@ export default function ServiceHub() {
     // You can handle the result here, e.g., save to history, show notification, etc.
   }, []);
 
-  // Check if form has valid data to enable submit
-  const canSubmit = formData.description.length >= 10 && formData.category.length > 0;
+  // Handle proceeding to booking/form after receiving AI estimate
+  const handleProceedToBooking = useCallback((result) => {
+    console.log('Proceeding to booking with estimate:', result);
+    // Navigate to the chat section, pre-filling with estimate data if available
+    if (result) {
+      setFormData((prev) => ({
+        ...prev,
+        description: result.summary || prev.description,
+      }));
+    }
+    setActiveSection('chat');
+  }, []);
 
   // Render the appropriate section based on activeSection state
   const renderSection = () => {
@@ -127,30 +99,13 @@ export default function ServiceHub() {
         return <AboutUs />;
       case 'contact':
         return <ContactUs />;
-      case 'form':
+      case 'chat':
         return (
-          <div className="form-flow">
-            <ScopeInputs 
-              initialData={formData}
-              onChange={handleFormChange}
-              onError={handleFormError}
-            />
-            {errors.description && (
-              <div className="submit-error" role="alert">{errors.description}</div>
-            )}
-            {errors.category && (
-              <div className="submit-error" role="alert">{errors.category}</div>
-            )}
-            {errors.submit && (
-              <div className="submit-error" role="alert">{errors.submit}</div>
-            )}
-            <ActionButton
-              label="Get Estimate"
-              loadingLabel="Analyzing..."
-              onSubmit={handleSubmit}
-              isLoading={isSubmitting}
-              isDisabled={!canSubmit}
+          <div className="chat-flow">
+            <AIChat 
+              photos={photos}
               formData={formData}
+              onSubmit={handleSubmit}
             />
           </div>
         );
@@ -158,7 +113,7 @@ export default function ServiceHub() {
       default:
         return (
           <>
-            <AIHero onEstimateComplete={handleEstimateComplete} />
+            <AIHero onEstimateComplete={handleEstimateComplete} onProceedToBooking={handleProceedToBooking} />
             <LandingContent onStartEstimate={handleStartEstimate} />
           </>
         );
@@ -169,7 +124,7 @@ export default function ServiceHub() {
     <div className="service-hub">
       {/* Header */}
       <Header 
-        showBack={activeSection === 'form'} 
+        showBack={activeSection === 'chat'} 
         onBack={() => setActiveSection('home')}
         setActiveSection={setActiveSection}
       />

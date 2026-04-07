@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './Header.css';
-import logo from '../assets/logo.png';
+import headerLogo from '../../assets/Header Logo.png';
 
 /**
  * Header Component - Clean minimal top navigation bar with dropdown menu
@@ -64,7 +64,7 @@ export default function Header({
             tabIndex={0}
             aria-label="Fixetta Home"
           >
-            <img src={logo} alt="Fixetta Logo" className="header-logo" />
+            <img src={headerLogo} alt="Fixetta Logo" className="header-logo" />
           </div>
         </div>
 

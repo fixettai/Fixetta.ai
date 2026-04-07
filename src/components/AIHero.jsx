@@ -13,7 +13,8 @@ export default function AIHero({
   title = 'Snap the problem.',
   subtitle = 'Get an instant AI estimate for your home repair.',
   ctaText = 'Try Snap AI',
-  onEstimateComplete
+  onEstimateComplete,
+  onProceedToBooking
 }) {
   const [isEstimating, setIsEstimating] = useState(false);
   const [photos, setPhotos] = useState([]);
@@ -272,9 +273,9 @@ export default function AIHero({
 
           {/* CTA Button */}
           <div className="result-actions">
-            <button className="btn-primary" onClick={() => alert('Booking feature coming soon!')}>
+            <button className="btn-primary" onClick={() => onProceedToBooking && onProceedToBooking(result)}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" /><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" /></svg>
-              {result.ui_guidance?.cta_label || 'Book This Repair'}
+              {result.ui_guidance?.cta_label || 'Confirm your details!'}
             </button>
             <button className="btn-secondary" onClick={handleNewEstimate}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>
@@ -303,7 +304,7 @@ export default function AIHero({
 
         {/* Instructions */}
         <div className="estimator-instructions">
-          <p>Upload photos of the area that needs repair. Our AI will analyze the damage and generate a visual pricing breakdown with interactive hotspots.</p>
+          <p>Upload photos, get your estimate.</p>
         </div>
 
         {/* Photo Upload Area */}
@@ -399,30 +400,6 @@ export default function AIHero({
           {photos.length > 0 ? `Analyze ${photos.length} Photo${photos.length > 1 ? 's' : ''}` : 'Analyze Description'}
         </button>
 
-        {/* Quick Demo Options */}
-        <div className="demo-options">
-          <span className="demo-label">Or try a quick demo:</span>
-          <div className="demo-tiles">
-            <button className="demo-tile" onClick={() => {
-              setUserNote('Cracked drywall near ceiling, water damage from upstairs bathroom leak, approximately 4x3 ft area');
-            }}>
-              <span>💧</span>
-              <span>Water Damage</span>
-            </button>
-            <button className="demo-tile" onClick={() => {
-              setUserNote('Hole in drywall from door handle, approximately 6 inch diameter, needs patch and paint');
-            }}>
-              <span>🔨</span>
-              <span>Hole Repair</span>
-            </button>
-            <button className="demo-tile" onClick={() => {
-              setUserNote('Electrical outlet sparking when plugging in devices, may need replacement');
-            }}>
-              <span>⚡</span>
-              <span>Electrical</span>
-            </button>
-          </div>
-        </div>
       </section>
     );
   }
