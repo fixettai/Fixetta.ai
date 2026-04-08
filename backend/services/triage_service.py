@@ -7,6 +7,7 @@ import os
 import httpx
 from pydantic import BaseModel, Field
 from typing import Any, List, Optional
+from enum import Enum
 
 
 # ── Configuration ─────────────────────────────────────────────────────────────
@@ -31,11 +32,17 @@ Anomalies: (e.g., Evidence of mold, active water leak, frayed wiring)"""
 
 # ── Pydantic Models ──────────────────────────────────────────────────────────
 
+class SeverityEnum(str, Enum):
+    MINOR = "Minor"
+    MODERATE = "Moderate"
+    STRUCTURAL = "Structural"
+    UNKNOWN = "Unknown"
+
 class TriageResult(BaseModel):
     """Result from the triage AI analysis"""
     material: str = Field(default="Unknown", description="Type of material damaged")
     extent: str = Field(default="Unknown", description="Extent of the damage")
-    severity: str = Field(default="Unknown", description="Minor/Moderate/Structural")
+    severity: SeverityEnum = Field(default=SeverityEnum.UNKNOWN, description="Minor/Moderate/Structural")
     anomalies: str = Field(default="None observed", description="Additional anomalies detected")
     raw_response: str = Field(default="", description="Raw response from the AI")
     success: bool = Field(default=True, description="Whether the analysis was successful")
@@ -145,7 +152,12 @@ def parse_triage_response(raw_response: str) -> TriageResult:
         elif line.lower().startswith("extent:"):
             result.extent = line.split(":", 1)[1].strip()
         elif line.lower().startswith("severity:"):
-            result.severity = line.split(":", 1)[1].strip()
+            severity_str = line.split(":", 1)[1].strip()
+            try:
+                result.severity = SeverityEnum(severity_str)
+            except ValueError:
+                # If the severity string doesn't match any enum value, default to UNKNOWN
+                result.severity = SeverityEnum.UNKNOWN
         elif line.lower().startswith("anomalies:"):
             result.anomalies = line.split(":", 1)[1].strip()
     

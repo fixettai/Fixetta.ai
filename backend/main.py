@@ -1,6 +1,6 @@
 """
 Fixetta.ai FastAPI Backend
-Intent Classification & Rebuttal Integration for AI Sales Chat
+Photo Analysis Pipeline with Richmond Baseline Enforcement
 """
 
 import os
@@ -13,489 +13,284 @@ from dotenv import load_dotenv
 load_dotenv()
 from typing import List, Optional, Dict, Any
 from contextlib import asynccontextmanager
+from decimal import Decimal
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from backend.services.intent_classifier import classify_intent, IntentClassificationResult
-from backend.services.rebuttal_service import get_rebuttal_context
-from backend.services.cost_data import fetch_regional_rates, COST_LOOKUP_TOOL_SCHEMA
-from backend.services.triage_service import analyze_multiple_images, TriageResult
+from .models.repair_models import (
+    ObjectionTypeEnum, 
+    ItemizedTask, 
+    RepairEstimate,
+    PhotoAnalysisRequest,
+    PhotoAnalysisResponse,
+    RICHMOND_LABOR_FLOOR,
+    RICHMOND_WASTE_FACTOR
+)
+from .services.intent_classifier import classify_intent, IntentClassificationResult
+from .services.rebuttal_service import fetch_smart_rebuttal
+from .services.cost_data import fetch_regional_rates
+from .services.triage_service import analyze_multiple_images, TriageResult
 
-
-# ── Pydantic Models ──────────────────────────────────────────────────────────
-
-class ChatMessage(BaseModel):
-    """A single chat message"""
-    role: str  # "user" or "assistant"
-    content: str
-
-
-class ImageData(BaseModel):
-    """Base64 encoded image data for triage analysis"""
-    base64: str = Field(..., description="Base64 encoded image data")
-    mime_type: str = Field(default="image/jpeg", description="MIME type of the image")
-
-
-class ChatRequest(BaseModel):
-    """Request body for the chat endpoint"""
-    messages: List[ChatMessage] = Field(..., description="Chat history")
-    user_message: str = Field(..., description="The latest user message to respond to")
-    photos_count: int = Field(default=0, description="Number of photos uploaded")
-    session_id: Optional[str] = Field(default=None, description="Session identifier for rate limiting")
-    context_summary: Optional[str] = Field(default=None, description="Project snapshot/context summary for context bridge")
-    images: Optional[List[ImageData]] = Field(default=None, description="Base64 encoded images for triage analysis")
-
-
-class ChatResponse(BaseModel):
-    """Response from the chat endpoint"""
-    response: str
-    intent_id: str
-    intent_confidence: float
-    rebuttal_applied: bool
-
-
-class ClassifyIntentRequest(BaseModel):
-    """Request body for the classify-intent endpoint"""
-    user_message: str = Field(..., min_length=1, description="The user message to classify")
-
-
-class HealthResponse(BaseModel):
-    """Health check response"""
-    status: str
-    timestamp: float
-
-
-class RegionalCostRequest(BaseModel):
-    """Request body for the regional cost endpoint"""
-    zip_code: str = Field(..., min_length=5, max_length=10, description="US ZIP code (5-digit or ZIP+4)")
-    category: str = Field(default="general", description="Repair category (e.g., 'flooring', 'plumbing')")
-
-
-class RegionalCostResponse(BaseModel):
-    """Response from the regional cost endpoint"""
-    zip_code: str
-    category: str
-    material_multiplier: float
-    labor_multiplier: float
-    base_costs: Dict[str, float]
-    adjusted_costs: Dict[str, float]
-    source: str
-
-
-# ── Configuration ─────────────────────────────────────────────────────────────
-
-OPENROUTER_API_KEY = os.getenv("VITE_OPENROUTER_API_KEY") or os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
-CLAUDE_MODEL = "anthropic/claude-sonnet-4.6"
-
-# Rate limiting configuration
-RATE_LIMIT_MAX_REQUESTS = 20  # Max requests per user per hour
-RATE_LIMIT_WINDOW_SECONDS = 3600  # 1 hour
-
-# In-memory rate limiting store (use Redis in production)
-_rate_limit_store: Dict[str, Dict[str, Any]] = {}
-
-
-# ── Rate Limiting Helper ─────────────────────────────────────────────────────
-
-def check_rate_limit(session_id: str) -> bool:
-    """
-    Simple in-memory rate limiter.
-    Returns True if request is allowed, False if rate limited.
-    """
-    now = time.time()
-    
-    if session_id not in _rate_limit_store:
-        _rate_limit_store[session_id] = {"count": 0, "reset_at": now + RATE_LIMIT_WINDOW_SECONDS}
-    
-    record = _rate_limit_store[session_id]
-    
-    # Reset if window has passed
-    if now > record["reset_at"]:
-        record["count"] = 0
-        record["reset_at"] = now + RATE_LIMIT_WINDOW_SECONDS
-    
-    # Check limit
-    if record["count"] >= RATE_LIMIT_MAX_REQUESTS:
-        return False
-    
-    record["count"] += 1
-    return True
-
-
-# ── Appointment Handoff Helper ────────────────────────────────────────────────
-
-async def trigger_notification_for_appointment(context_summary: Optional[str] = None):
-    """
-    Trigger a notification (Email/Slack/Webhook) to the team with the Project Snapshot.
-    This is a placeholder function — integrate with your notification service of choice.
-    """
-    project_snapshot = {
-        "event": "appointment_ready",
-        "context_summary": context_summary,
-        "message": "A user is ready to book! Send them a follow-up immediately."
-    }
-    
-    # TODO: Replace with actual notification logic (e.g., Slack webhook, email, etc.)
-    print(f"[AppointmentHandoff] NOTIFICATION: {json.dumps(project_snapshot, indent=2)}")
-    
-    # Example: Slack webhook
-    # async with httpx.AsyncClient() as client:
-    #     await client.post(os.getenv("SLACK_WEBHOOK_URL"), json={"text": f"New ready-to-book lead: {context_summary}"})
-
-    # Example: Email notification
-    # send_email(to="sales@fixetta.ai", subject="Ready to Book!", body=str(context_summary))
-    
-    return True
-
-
-# ── Rebuttal Directive Builder ────────────────────────────────────────────────
-
-def build_sales_directive(intent_result: IntentClassificationResult) -> Optional[str]:
-    """
-    Build a sales directive string to inject into Claude's system prompt.
-    Returns None if intent is 'none'.
-    """
-    if intent_result.intent_id == "none":
-        return None
-    
-    rebuttal_context = get_rebuttal_context(intent_result.intent_id)
-    if not rebuttal_context:
-        return None
-    
-    objection_type = rebuttal_context.get("objection_type", "Unknown Objection")
-    strategy = rebuttal_context.get("strategy", "")
-    example_script = rebuttal_context.get("example_script", "")
-    
-    directive = f"""
-> ALERT: The user has expressed an objection regarding {objection_type}.
-> STRATEGY: {strategy}
-> GUIDELINE: Use the following phrasing as inspiration to humanize the response: "{example_script}"
-> Do not copy verbatim; adapt to the current conversation vibe.
-> IMPORTANT: Keep the Fixetta tone: minimalist, helpful, and high-utility. Avoid corporate speak."""
-    
-    return directive
-
-
-# ── Claude API Caller ─────────────────────────────────────────────────────────
-
-async def call_claude_with_context(
-    messages: List[ChatMessage],
-    sales_directive: Optional[str] = None,
-    photos_count: int = 0,
-    context_summary: Optional[str] = None
-) -> str:
-    """
-    Call Claude via OpenRouter with the appropriate system prompt and context.
-    """
-    # Build the base system prompt
-    system_prompt = """You are a senior project lead at Fixetta. Your goal is to be helpful, human, and persuasive.
-
-STRICT FORMATING RULE: > Do NOT use any Markdown.
-
-No bold text (**word**).
-No bullet points (- or *).
-No headers (#).
-No numbered lists.
-
-Communication Style:
-Write like a human in a professional chat window. Use standard capitalization and punctuation. If you need to separate points, use a simple line break (Enter) or a new paragraph. Keep it clean, sleek, and minimalist to match the Fixetta brand.
-
-Sales Strategy:
-Incorporate the provided rebuttals.json logic, but adapt the scripts into natural, unformatted sentences. End every message with a clear, low-pressure question to keep the conversation moving toward an appointment.
-
-Cost Lookup Tool:
-You have access to a regional cost database (Craftsman National Estimator) that provides accurate material and labor pricing based on the user's ZIP code.
-IMPORTANT: Do not guess prices. If a zip code is provided, use the fetch_regional_rates tool to get accurate data before finalizing the itemized scope.
-Always reference the regional multipliers when discussing costs - this shows professionalism and builds trust.
-
-Knowledge Base:
-Current labor rates: $75-$125 per hour (adjusted by region)
-Material costs vary depending on the project and ZIP code
-Fixetta provides a 30-day satisfaction guarantee
-Users can upload up to 4 photos for AI analysis
-
-Instructions:
-Answer technical questions about the repair process
-If the user has uploaded photos, reference what you can see and provide helpful suggestions
-Always pivot back to completing the submission and getting an estimate
-Maintain a friendly, helpful, but sales-oriented persona
-Keep responses concise and action-oriented
-Encourage users to submit their inquiry for a formal estimate
-IMPORTANT: Keep the Fixetta tone: minimalist, helpful, and high-utility. Avoid corporate speak - be real and conversational.
-
-Remember: No markdown. Plain text only."""
-
-    # Prepend Memory Block if context_summary is provided
-    if context_summary:
-        import json
-        try:
-            ctx = json.loads(context_summary)
-            summary = ctx.get("summary", "")
-            estimate_total = ctx.get("estimate_total", "N/A")
-            last_action = ctx.get("last_action", "")
-            
-            memory_block = (
-                f"CONTEXT: The user has already uploaded photos showing {summary}. "
-                f"You have provided an estimate of ${estimate_total}. "
-                f"Current Status: {last_action}."
-            )
-        except (json.JSONDecodeError, AttributeError):
-            memory_block = f"CONTEXT: Project summary available - {context_summary}"
-        
-        system_prompt = f"{memory_block}\n\n{system_prompt}"
-        
-        # Add instruction to reference context naturally
-        system_prompt += "\n\nIMPORTANT: Reference the uploaded photos and the current estimate naturally in your conversation to prove you are paying attention."
-
-    # Append sales directive if present
-    if sales_directive:
-        system_prompt += f"\n\n--- SALES DIRECTIVE ---\n{sales_directive}"
-
-    # Add photo context if applicable
-    if photos_count > 0:
-        system_prompt += f"\n\nNote: The user has uploaded {photos_count} photo(s) for analysis. Reference this context when relevant."
-
-    # Build messages for Claude (only system + last user message for statelessness)
-    claude_messages = [{"role": "system", "content": system_prompt}]
-    
-    # Include recent conversation context (last 6 messages max for token efficiency)
-    recent_messages = messages[-6:] if len(messages) > 6 else messages
-    for msg in recent_messages:
-        claude_messages.append({"role": msg.role, "content": msg.content})
-
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(
-                OPENROUTER_API_URL,
-                headers={
-                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                    "HTTP-Referer": "http://localhost:8000",
-                    "X-Title": "Fixetta AI Chat",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": CLAUDE_MODEL,
-                    "messages": claude_messages,
-                    "temperature": 0.7,
-                    "max_tokens": 1024
-                }
-            )
-            
-            if response.status_code != 200:
-                # httpx Response.text is a property (str), not a method
-                error_text = str(response.text)
-                print(f"[ChatEndpoint] Claude API error: {response.status_code} - {error_text}")
-                raise HTTPException(status_code=502, detail="Failed to get response from AI")
-            
-            data = response.json()
-            return data.get("choices", [{}])[0].get("message", {}).get("content", "")
-            
-    except httpx.RequestError as e:
-        print(f"[ChatEndpoint] HTTP error: {e}")
-        raise HTTPException(status_code=503, detail="AI service unavailable")
-
-
-# ── App Lifecycle ─────────────────────────────────────────────────────────────
+# ── FastAPI App Setup ──────────────────────────────────────────────────
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup and shutdown events"""
-    print("[Fixetta API] Starting up...")
+    """Lifespan manager for startup/shutdown events."""
+    # Startup
+    print("🚀 Fixetta.ai Backend starting up...")
     yield
-    print("[Fixetta API] Shutting down...")
-
-
-# ── FastAPI App ───────────────────────────────────────────────────────────────
+    # Shutdown
+    print("👋 Fixetta.ai Backend shutting down...")
 
 app = FastAPI(
-    title="Fixetta AI Chat API",
-    description="Intent Classification & Rebuttal Integration for Fixetta Sales Chat",
+    title="Fixetta.ai API",
+    description="AI-powered Home Repair Estimator with Richmond Baseline Pricing",
     version="1.0.0",
     lifespan=lifespan
 )
 
-# CORS middleware - allow frontend on localhost:3000/5173 and production
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://localhost:8080",
-        "https://fixetta.ai",
-        "https://www.fixetta.ai"
-    ],
+    allow_origins=["*"],  # In production, restrict to specific origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# ── Helper Functions ───────────────────────────────────────────────────
 
-# ── Routes ────────────────────────────────────────────────────────────────────
-
-@app.get("/health", response_model=HealthResponse)
-async def health_check():
-    """Health check endpoint"""
-    return HealthResponse(
-        status="ok",
-        timestamp=time.time()
-    )
-
-
-@app.post("/api/v1/chat", response_model=ChatResponse)
-async def chat_endpoint(request: ChatRequest):
+def map_triage_to_objection(triage_result: Dict[str, Any]) -> ObjectionTypeEnum:
     """
-    Main chat endpoint with intent classification, rebuttal injection, and triage analysis.
-    
-    Flow:
-    1. User message comes in
-    2. If images are provided, Gemini 3.0 Flash performs triage analysis
-    3. Gemini 3.1 Flash Lite classifies the intent (~200ms)
-    4. FastAPI fetches matching strategy from rebuttals.json
-    5. Claude 4.6 receives the chat history + Sales Directive + Triage Results
-    6. Claude generates a humanized, sales-optimized response
+    Map Gemini Flash triage result to standardized objection type.
+    This prevents logic gate failures from Gemini Flash variations.
     """
-    # Rate limiting
-    session_id = request.session_id or "anonymous"
-    if not check_rate_limit(session_id):
-        raise HTTPException(
-            status_code=429,
-            detail="Rate limit exceeded. Please try again later."
-        )
+    if not triage_result:
+        return ObjectionTypeEnum.NONE
     
-    user_message = request.user_message
+    # Extract key phrases from triage result
+    triage_text = json.dumps(triage_result).lower()
     
-    # Step 0: Triage Analysis (if images are provided and not already analyzed)
-    triage_result: Optional[TriageResult] = None
-    if request.images and len(request.images) > 0:
-        print(f"[ChatEndpoint] Running triage analysis on {len(request.images)} image(s)...")
-        image_base64_list = [img.base64 for img in request.images]
-        mime_types = [img.mime_type for img in request.images]
-        triage_result = await analyze_multiple_images(image_base64_list, mime_types)
-        if triage_result.success:
-            print(f"[ChatEndpoint] Triage complete: {triage_result.material} - {triage_result.severity}")
-        else:
-            print(f"[ChatEndpoint] Triage failed: {triage_result.raw_response}")
-    
-    # Step 1: Classify user intent using Gemini (fast & cheap)
-    intent_result = await classify_intent(user_message)
-    print(f"[ChatEndpoint] Intent classified: {intent_result.intent_id} (confidence: {intent_result.confidence})")
-    
-    # Step 2: Build sales directive if intent is not 'none'
-    sales_directive = build_sales_directive(intent_result)
-    rebuttal_applied = sales_directive is not None
-    
-    if rebuttal_applied:
-        print(f"[ChatEndpoint] Sales directive applied for: {intent_result.intent_id}")
-    
-    # Step 2b: Check for appointment_ready — trigger handoff notification
-    if intent_result.intent_id == "appointment_ready":
-        print(f"[ChatEndpoint] APPOINTMENT READY! Triggering team notification...")
-        await trigger_notification_for_appointment(context_summary=request.context_summary)
-    
-    # Step 3: Enrich context summary with triage results
-    enriched_context = request.context_summary
-    if triage_result and triage_result.success:
-        triage_context = (
-            f"TRIAGE ANALYSIS: Material={triage_result.material}, "
-            f"Extent={triage_result.extent}, Severity={triage_result.severity}, "
-            f"Anomalies={triage_result.anomalies}"
-        )
-        if enriched_context:
-            enriched_context = f"{enriched_context} | {triage_context}"
-        else:
-            enriched_context = triage_context
-    
-    # Step 4: Get response from Claude with context
-    claude_response = await call_claude_with_context(
-        messages=request.messages,
-        sales_directive=sales_directive,
-        photos_count=request.photos_count,
-        context_summary=enriched_context
-    )
-    
-    return ChatResponse(
-        response=claude_response,
-        intent_id=intent_result.intent_id,
-        intent_confidence=intent_result.confidence,
-        rebuttal_applied=rebuttal_applied
-    )
+    # Map based on common objection patterns
+    if any(phrase in triage_text for phrase in ["price", "expensive", "cost", "budget", "high"]):
+        return ObjectionTypeEnum.PRICE_TOO_HIGH
+    elif any(phrase in triage_text for phrase in ["compare", "other quotes", "bids", "shopping"]):
+        return ObjectionTypeEnum.NEED_OTHER_BIDS
+    elif any(phrase in triage_text for phrase in ["spouse", "partner", "wife", "husband", "decision"]):
+        return ObjectionTypeEnum.SPOUSE_NOT_PRESENT
+    elif any(phrase in triage_text for phrase in ["think", "consider", "later", "wait", "procrastinate"]):
+        return ObjectionTypeEnum.THINK_ABOUT_IT
+    elif any(phrase in triage_text for phrase in ["insurance", "claim", "adjuster", "financing"]):
+        return ObjectionTypeEnum.INSURANCE_CHECK
+    elif any(phrase in triage_text for phrase in ["schedule", "book", "appointment", "ready", "commit"]):
+        return ObjectionTypeEnum.APPOINTMENT_READY
+    else:
+        return ObjectionTypeEnum.NONE
 
-
-@app.post("/api/v1/classify-intent", response_model=IntentClassificationResult)
-async def classify_intent_endpoint(request: ClassifyIntentRequest):
+async def generate_estimate_from_triage(triage_result: Dict[str, Any], zip_code: Optional[str] = None) -> Optional[RepairEstimate]:
     """
-    Standalone intent classification endpoint (useful for debugging/testing).
-    """
-    return await classify_intent(request.user_message)
-
-
-@app.post("/api/v1/regional-costs", response_model=RegionalCostResponse)
-async def get_regional_costs(request: RegionalCostRequest):
-    """
-    Get regional cost data for a given ZIP code and repair category.
-    
-    Returns material and labor cost multipliers based on Craftsman National
-    Estimator data (or fallback regional averages).
+    Generate repair estimate from triage result using ItemizedTask model.
+    This is where Sonnet 3.5 would generate the actual estimate.
+    For now, we create a mock estimate based on triage data.
     """
     try:
-        result = await fetch_regional_rates(
-            zip_code=request.zip_code,
-            category=request.category
+        # Extract repair information from triage
+        repair_type = triage_result.get("repair_type", "General Repair")
+        severity = triage_result.get("severity", "medium")
+        estimated_hours = triage_result.get("estimated_hours", 4.0)
+        
+        # Calculate costs based on Richmond Baseline
+        labor_hours = Decimal(str(estimated_hours))
+        material_cost = Decimal("150.00")  # Base material cost
+        
+        # Create itemized task
+        task = ItemizedTask(
+            description=f"{repair_type} repair ({severity} severity)",
+            labor_hours=labor_hours,
+            labor_rate=RICHMOND_LABOR_FLOOR,
+            material_cost=material_cost
         )
-        return result
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        
+        # Get regional multiplier
+        regional_multiplier = Decimal("1.0")
+        if zip_code:
+            regional_rates = await fetch_regional_rates(zip_code)
+            if regional_rates and hasattr(regional_rates, "adjusted_costs"):
+                # Use the average of material and labor multipliers
+                material_mult = regional_rates.material_multiplier
+                labor_mult = regional_rates.labor_multiplier
+                regional_multiplier = Decimal(str((material_mult + labor_mult) / 2))
+        
+        # Create repair estimate
+        estimate = RepairEstimate(
+            tasks=[task],
+            zip_code=zip_code,
+            regional_multiplier=regional_multiplier
+        )
+        
+        return estimate
+        
     except Exception as e:
-        print(f"[RegionalCostEndpoint] Error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch regional costs")
+        print(f"Error generating estimate: {e}")
+        return None
 
+# ── API Endpoints ──────────────────────────────────────────────────────
 
-@app.get("/api/v1/cost-tool-schema")
-async def get_cost_tool_schema():
+@app.get("/")
+async def root():
+    """Root endpoint with API information."""
+    return {
+        "name": "Fixetta.ai API",
+        "version": "1.0.0",
+        "status": "operational",
+        "richmond_baseline": {
+            "labor_floor": str(RICHMOND_LABOR_FLOOR),
+            "waste_factor": str(RICHMOND_WASTE_FACTOR)
+        }
+    }
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "healthy", "timestamp": time.time()}
+
+@app.post("/api/analyze-photos", response_model=PhotoAnalysisResponse)
+async def analyze_photos(
+    photos: List[UploadFile] = File(..., description="Uploaded repair photos"),
+    zip_code: Optional[str] = Form(None, description="ZIP code for regional pricing"),
+    additional_context: Optional[str] = Form(None, description="Additional context from user")
+):
     """
-    Return the JSON schema for the Cost Lookup Tool.
-    Used to configure Claude's function calling capabilities.
+    Main photo analysis endpoint.
+    
+    Flow:
+    1. Receive photos
+    2. Call Triage (Gemini Flash)
+    3. Fetch Rebuttal using Enum mapping
+    4. Generate Estimate using ItemizedTask model
     """
-    return {"tools": [COST_LOOKUP_TOOL_SCHEMA]}
+    try:
+        # Step 1: Process uploaded photos
+        photo_data = []
+        for photo in photos:
+            content = await photo.read()
+            # In production, we would upload to cloud storage or process directly
+            # For now, we'll use a placeholder
+            photo_data.append({
+                "filename": photo.filename,
+                "size": len(content),
+                "content_type": photo.content_type
+            })
+        
+        print(f"📸 Received {len(photo_data)} photos for analysis")
+        
+        # Step 2: Call Triage (Gemini Flash)
+        print("🔍 Calling Gemini Flash for triage analysis...")
+        triage_result = await analyze_multiple_images(photo_data)
+        
+        if not triage_result:
+            raise HTTPException(status_code=500, detail="Triage analysis failed")
+        
+        # Step 3: Map to ObjectionTypeEnum
+        triage_dict = triage_result.dict() if hasattr(triage_result, 'dict') else triage_result
+        objection_type = map_triage_to_objection(triage_dict)
+        print(f"🎯 Detected objection type: {objection_type}")
+        
+        # Step 4: Fetch Smart Rebuttal using Enum
+        rebuttal = fetch_smart_rebuttal(objection_type)
+        # Fallback to Standard Professionalism script if rebuttal is None
+        if rebuttal is None:
+            rebuttal = {
+                "strategy": "Standard Professionalism",
+                "example_script": "Thank you for sharing your concerns. We understand the importance of making informed decisions. Our estimates are based on Richmond, VA market rates with transparent pricing that includes a $75/hr minimum labor charge and 15% material waste factor. We're committed to providing fair, competitive pricing while ensuring quality workmanship."
+            }
+        
+        # Step 5: Generate Estimate using ItemizedTask model
+        estimate = await generate_estimate_from_triage(triage_dict, zip_code)
+        
+        # Step 6: Determine confidence level
+        confidence = "medium"
+        if estimate and rebuttal:
+            confidence = "high"
+        elif not estimate and not rebuttal:
+            confidence = "low"
+        
+        # Step 7: Prepare response
+        response = PhotoAnalysisResponse(
+            triage_result=triage_dict,
+            objection_type=objection_type,
+            rebuttal=rebuttal,
+            estimate=estimate,
+            confidence=confidence,
+            verification_notes="Estimate generated with Richmond Baseline pricing ($75/hr floor, 15% waste)"
+        )
+        
+        return response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error in photo analysis: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
+@app.post("/api/chat")
+async def chat_endpoint(request: Request):
+    """
+    Legacy chat endpoint for backward compatibility.
+    Maintains existing intent classification and rebuttal integration.
+    """
+    try:
+        data = await request.json()
+        message = data.get("message", "")
+        
+        # Classify intent - check if it's async
+        from .services.intent_classifier import IntentClassifier
+        classifier = IntentClassifier()
+        intent_result = await classifier.classify_intent(message)
+        
+        # Map to objection type
+        objection_type = ObjectionTypeEnum.NONE
+        if intent_result and intent_result.intent_id:
+            try:
+                objection_type = ObjectionTypeEnum(intent_result.intent_id)
+            except ValueError:
+                # Fallback to string mapping
+                objection_type = map_triage_to_objection({"text": intent_result.intent_id})
+        
+        # Fetch rebuttal
+        rebuttal = fetch_smart_rebuttal(objection_type)
+        
+        return {
+            "intent": intent_result.dict() if intent_result else None,
+            "objection_type": objection_type.value,
+            "rebuttal": rebuttal,
+            "timestamp": time.time()
+        }
+        
+    except Exception as e:
+        print(f"❌ Error in chat endpoint: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
-# ── Error Handlers ────────────────────────────────────────────────────────────
+# ── Error Handlers ─────────────────────────────────────────────────────
 
 @app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
-    """Generic HTTP exception handler - avoids leaking stack traces"""
-    response = JSONResponse(
+async def http_exception_handler(request, exc):
+    return JSONResponse(
         status_code=exc.status_code,
-        content={"detail": exc.detail}
+        content={"detail": exc.detail, "timestamp": time.time()}
     )
-    # Add CORS headers to error responses
-    origin = request.headers.get("origin")
-    if origin in ["http://localhost:3000", "http://localhost:5173", "http://localhost:8080", "https://fixetta.ai", "https://www.fixetta.ai"]:
-        response.headers["access-control-allow-origin"] = origin
-        response.headers["access-control-allow-credentials"] = "true"
-    return response
-
 
 @app.exception_handler(Exception)
-async def generic_exception_handler(request: Request, exc: Exception):
-    """Catch-all exception handler - returns generic error to client"""
-    print(f"[Fixetta API] Unhandled error: {exc}")
-    response = JSONResponse(
+async def general_exception_handler(request, exc):
+    print(f"⚠️ Unhandled exception: {exc}")
+    return JSONResponse(
         status_code=500,
-        content={"detail": "Internal server error"}
+        content={"detail": "Internal server error", "timestamp": time.time()}
     )
-    # Add CORS headers to error responses
-    origin = request.headers.get("origin")
-    if origin in ["http://localhost:3000", "http://localhost:5173", "http://localhost:8080", "https://fixetta.ai", "https://www.fixetta.ai"]:
-        response.headers["access-control-allow-origin"] = origin
-        response.headers["access-control-allow-credentials"] = "true"
-    return response
-
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
