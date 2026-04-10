@@ -6,6 +6,7 @@ import LandingContent from '../components/LandingContent';
 import HowToUse from '../components/HowToUse';
 import AboutUs from '../components/AboutUs';
 import ContactUs from '../components/ContactUs';
+import ContractorMatch from '../components/ContractorMatch';
 import { useSEO, buildServiceSchema } from '../hooks/useSEO';
 import './ServiceHub.css';
 
@@ -54,7 +55,7 @@ const DEFAULT_LOCATION = 'Richmond, VA';
  * Ensure all new routes follow the /services/[service-name] structure.
  */
 export default function ServiceHub() {
-  const [activeSection, setActiveSection] = useState('home'); // 'home' | 'form' | 'how-to-use' | 'about' | 'contact'
+  const [activeSection, setActiveSection] = useState('home'); // 'home' | 'form' | 'how-to-use' | 'about' | 'contact' | 'contractor-match'
   const [formData, setFormData] = useState({
     description: '',
     category: '',
@@ -110,12 +111,19 @@ export default function ServiceHub() {
     console.log(JSON.stringify(payload, null, 2));
     console.log('==================================');
 
+    // Generate a mock estimate ID (in real app, this would come from backend)
+    const estimate_id = `est_${Date.now()}`;
+
     setSubmitResult({
       success: true,
       message: 'Analysis submitted successfully!',
       payload,
+      estimate_id,
       timestamp: new Date().toISOString(),
     });
+
+    // Transition to contractor match view
+    setActiveSection('contractor-match');
 
     // Reset after showing result
     setTimeout(() => {
@@ -168,6 +176,16 @@ export default function ServiceHub() {
               photos={photos}
               formData={formData}
               onSubmit={handleSubmit}
+            />
+          </div>
+        );
+      case 'contractor-match':
+        return (
+          <div className="contractor-match-flow">
+            <ContractorMatch 
+              zip={formData.zip}
+              category={formData.category}
+              estimate_id={submitResult?.payload?.estimate_id || ''}
             />
           </div>
         );

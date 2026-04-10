@@ -143,16 +143,17 @@ export default function AIChat({ photos = [], formData = {}, onSubmit, photoAnal
     }
   }, [input, photos, messages, sessionContext, formData]);
 
-  // Handle form submission from chat
-  const handleSubmitInquiry = useCallback(() => {
-    if (onSubmit) {
-      onSubmit({
-        chatHistory: messages,
-        photos,
-        ...formData
-      });
-    }
-  }, [messages, photos, formData, onSubmit]);
+   // Handle form submission from chat
+   const handleSubmitInquiry = useCallback(() => {
+     if (onSubmit) {
+       onSubmit({
+         view: 'contractor-matchmaker',
+         chatHistory: messages,
+         photos,
+         ...formData
+       });
+     }
+   }, [messages, photos, formData, onSubmit]);
 
   // Handle key press for sending message
   const handleKeyPress = useCallback((e) => {

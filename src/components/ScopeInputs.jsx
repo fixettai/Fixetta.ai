@@ -240,12 +240,12 @@ export default function ScopeInputs({
         </div>
       </div>
 
-      {/* AI Chat Integration - Replaces all form sections */}
-      <AIChat 
-        photos={[]}
-        formData={formData}
-        onSubmit={() => {}}
-      />
+       {/* AI Chat Integration - Replaces all form sections */}
+       <AIChat 
+         photos={[]}
+         formData={formData}
+         onSubmit={handleFormSubmit}
+       />
     </div>
   );
 }

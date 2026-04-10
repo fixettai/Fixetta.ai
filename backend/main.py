@@ -34,6 +34,10 @@ from .services.rebuttal_service import fetch_smart_rebuttal
 from .services.cost_data import fetch_regional_rates
 from .services.triage_service import analyze_multiple_images, TriageResult
 
+# In-memory cache for contractor list with 5-minute TTL
+contractor_cache = {}
+CACHE_TTL_SECONDS = 5 * 60  # 5 minutes
+
 # ── FastAPI App Setup ──────────────────────────────────────────────────
 
 @asynccontextmanager
@@ -274,7 +278,73 @@ async def chat_endpoint(request: Request):
         print(f"❌ Error in chat endpoint: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
-# ── Error Handlers ─────────────────────────────────────────────────────
+
+@app.get("/api/v1/contractors/match")
+async def contractor_match(zip: str, category: str):
+    """
+    Contractor matching endpoint that fetches data from Google Apps Script.
+    Filters contractors based on category and zip code.
+    Implements caching with 5-minute TTL.
+    """
+    try:
+        # Create cache key
+        cache_key = f"{zip}:{category}"
+        current_time = time.time()
+        
+        # Check if we have cached data that's still valid
+        if cache_key in contractor_cache:
+            cached_data, timestamp = contractor_cache[cache_key]
+            if current_time - timestamp < CACHE_TTL_SECONDS:
+                print(f"📦 Returning cached contractor data for {cache_key}")
+                return cached_data
+        
+        # Google Apps Script Web App URL
+        google_script_url = "[PASTE_YOUR_URL_HERE]"
+        
+        # Make request to Google Apps Script with parameters
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                google_script_url,
+                params={
+                    "zip": zip,
+                    "category": category
+                },
+                timeout=30.0
+            )
+            
+            if response.status_code != 200:
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=f"Google Apps Script returned status {response.status_code}"
+                )
+            
+            # Parse the response from Google Apps Script
+            data = response.json()
+            
+            # Filter contractors based on category and zip (though the script should already do this)
+            # For now, we'll return what we get from the script
+            contractors = data if isinstance(data, list) else []
+            
+            # Cache the result
+            contractor_cache[cache_key] = (contractors, current_time)
+            print(f"💾 Cached contractor data for {cache_key}")
+            
+            # If we want to do additional filtering on the frontend data:
+            # filtered_contractors = [
+            #     c for c in contractors 
+            #     if c.get('category', '').lower() == category.lower() 
+            #     and c.get('zip', '').startswith(zip[:5])  # Match first 5 digits of ZIP
+            # ]
+            # return filtered_contractors
+            
+            return contractors
+        
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=408, detail="Request to Google Apps Script timed out")
+    except Exception as e:
+        print(f"❌ Error in contractor match endpoint: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
